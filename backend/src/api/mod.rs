@@ -5,7 +5,7 @@ pub mod ws;
 use std::sync::Arc;
 
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -33,6 +33,15 @@ pub fn router(state: Arc<AppState>, stream_manager: Arc<StreamManager>) -> Route
         .route("/api/streams/:id/disable", post(routes::disable_stream))
         .route("/api/streams/:id/snapshot", get(routes::snapshot))
         .route("/api/streams/:id/live", get(routes::stream_live))
+        // Stream rules
+        .route(
+            "/api/streams/:id/rules",
+            get(routes::list_rules).post(routes::create_rule),
+        )
+        .route(
+            "/api/streams/:id/rules/:rule_id",
+            put(routes::update_rule).delete(routes::delete_rule),
+        )
         // Events
         .route("/api/events", get(routes::list_events))
         .route("/api/events/:id", get(routes::get_event))

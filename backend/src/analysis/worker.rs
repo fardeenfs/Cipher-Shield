@@ -4,7 +4,7 @@ use tracing::{error, info};
 use uuid::Uuid;
 
 use crate::{
-    analysis::vlm::{DynVlmClient, RiskLevel},
+    analysis::vlm::{DynVlmClient, RiskLevel, VlmRule},
     storage::{db, models::AnalysisEvent},
     streams::source::CapturedFrame,
 };
@@ -86,7 +86,14 @@ async fn process_frame(
 ) -> anyhow::Result<()> {
     info!(stream = %frame.stream_name, "Analyzing frame");
 
-    let result = vlm.analyze(&frame.data, &frame.stream_name).await?;
+    // Fetch per-stream rules and convert to VlmRule for prompt injection.
+    let stream_rules = db::list_rules(db, frame.stream_id).await.unwrap_or_default();
+    let vlm_rules: Vec<VlmRule> = stream_rules
+        .into_iter()
+        .map(|r| VlmRule { description: r.description, threat_level: r.threat_level })
+        .collect();
+
+    let result = vlm.analyze(&frame.data, &frame.stream_name, &vlm_rules).await?;
 
     let event_id = Uuid::new_v4();
     let risk_str = match result.risk_level {

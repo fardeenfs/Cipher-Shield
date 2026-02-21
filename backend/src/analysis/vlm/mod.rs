@@ -64,12 +64,48 @@ Analyze the provided camera frame and respond ONLY with a valid JSON object usin
 
 Return ONLY the JSON object. Do not include any other text, markdown, or explanation."#;
 
+// ─── Per-stream rules ─────────────────────────────────────────────────────────
+
+/// A lightweight rule passed to the VLM to customise its threat-level decision.
+/// Constructed from `storage::models::StreamRule` by the analysis worker.
+pub struct VlmRule {
+    pub description: String,
+    /// "none" | "low" | "medium" | "high"
+    pub threat_level: String,
+}
+
+/// Builds the rules addendum that is appended to the base system prompt.
+/// Returns an empty string when there are no rules.
+pub fn build_rules_prompt(rules: &[VlmRule]) -> String {
+    if rules.is_empty() {
+        return String::new();
+    }
+
+    let mut out = String::from(
+        "\n\nCustom threat assessment rules for this camera \
+         (apply these strictly when setting risk_level — they override your default judgment):\n",
+    );
+    for rule in rules {
+        out.push_str(&format!("- {}: {}\n", rule.threat_level.to_uppercase(), rule.description));
+    }
+    out.push_str(
+        "\nIf a rule matches what you see, use its threat level. \
+         If multiple rules match, use the highest level.",
+    );
+    out
+}
+
 // ─── Trait ────────────────────────────────────────────────────────────────────
 
 #[async_trait]
 pub trait VlmClient: Send + Sync {
     /// Analyze a JPEG image and return structured results.
-    async fn analyze(&self, image_jpeg: &[u8], stream_name: &str) -> Result<AnalysisResult>;
+    async fn analyze(
+        &self,
+        image_jpeg: &[u8],
+        stream_name: &str,
+        rules: &[VlmRule],
+    ) -> Result<AnalysisResult>;
 }
 
 pub type DynVlmClient = Arc<dyn VlmClient>;

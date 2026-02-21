@@ -17,7 +17,7 @@ use crate::{
     error::{AppError, Result},
 };
 
-use super::{parse_or_fallback, AnalysisResult, SYSTEM_PROMPT};
+use super::{build_rules_prompt, parse_or_fallback, AnalysisResult, VlmRule, SYSTEM_PROMPT};
 
 pub struct OpenAiCompatClient {
     client: reqwest::Client,
@@ -58,16 +58,22 @@ struct AssistantMessage {
 
 #[async_trait::async_trait]
 impl super::VlmClient for OpenAiCompatClient {
-    async fn analyze(&self, image_jpeg: &[u8], stream_name: &str) -> Result<AnalysisResult> {
+    async fn analyze(
+        &self,
+        image_jpeg: &[u8],
+        stream_name: &str,
+        rules: &[VlmRule],
+    ) -> Result<AnalysisResult> {
         let b64 = B64.encode(image_jpeg);
         let data_uri = format!("data:image/jpeg;base64,{b64}");
+        let system = format!("{SYSTEM_PROMPT}{}", build_rules_prompt(rules));
 
         let body = json!({
             "model": self.model,
             "messages": [
                 {
                     "role": "system",
-                    "content": SYSTEM_PROMPT
+                    "content": system
                 },
                 {
                     "role": "user",

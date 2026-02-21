@@ -5,7 +5,10 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
-    storage::models::{AnalysisEvent, CreateStreamRequest, EventQuery, Stream, UpdateStreamRequest},
+    storage::models::{
+        AnalysisEvent, CreateRuleRequest, CreateStreamRequest, EventQuery, Stream,
+        StreamRule, UpdateRuleRequest, UpdateStreamRequest,
+    },
 };
 
 // ─── Streams ──────────────────────────────────────────────────────────────────
@@ -189,4 +192,92 @@ pub async fn get_event(db: &PgPool, id: Uuid) -> Result<AnalysisEvent> {
     .fetch_optional(db)
     .await?
     .ok_or_else(|| AppError::NotFound(format!("Event {id} not found")))
+}
+
+// ─── Stream Rules ─────────────────────────────────────────────────────────────
+
+pub async fn list_rules(db: &PgPool, stream_id: Uuid) -> Result<Vec<StreamRule>> {
+    let rows = sqlx::query_as!(
+        StreamRule,
+        r#"SELECT id, stream_id, description, threat_level, position, created_at, updated_at
+           FROM stream_rules
+           WHERE stream_id = $1
+           ORDER BY position ASC, created_at ASC"#,
+        stream_id
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn create_rule(
+    db: &PgPool,
+    stream_id: Uuid,
+    req: &CreateRuleRequest,
+) -> Result<StreamRule> {
+    let row = sqlx::query_as!(
+        StreamRule,
+        r#"INSERT INTO stream_rules (stream_id, description, threat_level, position)
+           VALUES ($1, $2, $3, $4)
+           RETURNING id, stream_id, description, threat_level, position, created_at, updated_at"#,
+        stream_id,
+        req.description,
+        req.threat_level,
+        req.position,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn update_rule(
+    db: &PgPool,
+    rule_id: Uuid,
+    stream_id: Uuid,
+    req: &UpdateRuleRequest,
+) -> Result<StreamRule> {
+    let current = sqlx::query_as!(
+        StreamRule,
+        r#"SELECT id, stream_id, description, threat_level, position, created_at, updated_at
+           FROM stream_rules WHERE id = $1 AND stream_id = $2"#,
+        rule_id,
+        stream_id,
+    )
+    .fetch_optional(db)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Rule {rule_id} not found")))?;
+
+    let row = sqlx::query_as!(
+        StreamRule,
+        r#"UPDATE stream_rules
+           SET description  = $3,
+               threat_level = $4,
+               position     = $5,
+               updated_at   = NOW()
+           WHERE id = $1 AND stream_id = $2
+           RETURNING id, stream_id, description, threat_level, position, created_at, updated_at"#,
+        rule_id,
+        stream_id,
+        req.description.as_deref().unwrap_or(&current.description),
+        req.threat_level.as_deref().unwrap_or(&current.threat_level),
+        req.position.unwrap_or(current.position),
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn delete_rule(db: &PgPool, rule_id: Uuid, stream_id: Uuid) -> Result<()> {
+    let result = sqlx::query!(
+        "DELETE FROM stream_rules WHERE id = $1 AND stream_id = $2",
+        rule_id,
+        stream_id,
+    )
+    .execute(db)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound(format!("Rule {rule_id} not found")));
+    }
+    Ok(())
 }

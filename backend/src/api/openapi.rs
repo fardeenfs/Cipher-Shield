@@ -1,6 +1,9 @@
 use utoipa::OpenApi;
 
-use crate::storage::models::{AnalysisEvent, CreateStreamRequest, Stream, UpdateStreamRequest};
+use crate::storage::models::{
+    AnalysisEvent, CreateRuleRequest, CreateStreamRequest, Stream,
+    StreamRule, UpdateRuleRequest, UpdateStreamRequest,
+};
 use super::routes;
 
 #[derive(OpenApi)]
@@ -26,6 +29,10 @@ use super::routes;
         routes::stream_live,
         routes::list_events,
         routes::get_event,
+        routes::list_rules,
+        routes::create_rule,
+        routes::update_rule,
+        routes::delete_rule,
     ),
     components(
         schemas(
@@ -33,12 +40,16 @@ use super::routes;
             CreateStreamRequest,
             UpdateStreamRequest,
             AnalysisEvent,
+            StreamRule,
+            CreateRuleRequest,
+            UpdateRuleRequest,
         )
     ),
     tags(
         (name = "health",  description = "Service health check"),
         (name = "streams", description = "Video stream management"),
         (name = "events",  description = "Analysis event retrieval"),
+        (name = "rules",   description = "Per-stream VLM threat assessment rules"),
     )
 )]
 pub struct ApiDoc;

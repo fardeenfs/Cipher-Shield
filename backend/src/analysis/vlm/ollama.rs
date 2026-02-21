@@ -7,7 +7,7 @@ use crate::{
     error::{AppError, Result},
 };
 
-use super::{parse_or_fallback, AnalysisResult, SYSTEM_PROMPT};
+use super::{build_rules_prompt, parse_or_fallback, AnalysisResult, VlmRule, SYSTEM_PROMPT};
 
 pub struct OllamaClient {
     client: reqwest::Client,
@@ -46,16 +46,22 @@ struct GenerateResponse {
 
 #[async_trait::async_trait]
 impl super::VlmClient for OllamaClient {
-    async fn analyze(&self, image_jpeg: &[u8], stream_name: &str) -> Result<AnalysisResult> {
+    async fn analyze(
+        &self,
+        image_jpeg: &[u8],
+        stream_name: &str,
+        rules: &[VlmRule],
+    ) -> Result<AnalysisResult> {
         let b64 = B64.encode(image_jpeg);
         let prompt = format!(
             "Analyze this security camera frame from '{stream_name}'. Respond with the required JSON."
         );
+        let system = format!("{SYSTEM_PROMPT}{}", build_rules_prompt(rules));
 
         let body = GenerateRequest {
             model: &self.model,
             prompt: &prompt,
-            system: SYSTEM_PROMPT,
+            system: &system,
             images: vec![b64],
             stream: false,
         };

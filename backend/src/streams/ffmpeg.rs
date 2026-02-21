@@ -114,8 +114,12 @@ impl FfmpegCapturer {
                 #[cfg(target_os = "windows")]
                 cmd.args([
                     "-f", "dshow",
+                    // Capture at the same rate we output so dshow's buffer never
+                    // accumulates excess frames (fixes "rtbufsize too full" warnings).
+                    "-framerate", &LIVE_FPS.to_string(),
+                    // Give dshow a larger ring buffer (100 MB) as a safety net.
+                    "-rtbufsize", "100M",
                     "-i", &format!("video={}", self.source_url),
-                    "-vf", &format!("fps={LIVE_FPS}"),
                     "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",

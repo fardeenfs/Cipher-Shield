@@ -69,3 +69,36 @@ pub struct EventQuery {
 }
 
 fn default_limit() -> i64 { 50 }
+
+// ─── Stream Rules ─────────────────────────────────────────────────────────────
+
+/// A per-stream rule the VLM uses to assign threat levels.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
+pub struct StreamRule {
+    pub id: Uuid,
+    pub stream_id: Uuid,
+    /// Human-readable description, e.g. "Person climbing the fence".
+    pub description: String,
+    /// "none" | "low" | "medium" | "high"
+    pub threat_level: String,
+    /// Display / prompt ordering (lower = earlier).
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateRuleRequest {
+    pub description: String,
+    /// "none" | "low" | "medium" | "high"
+    pub threat_level: String,
+    #[serde(default)]
+    pub position: i32,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateRuleRequest {
+    pub description: Option<String>,
+    pub threat_level: Option<String>,
+    pub position: Option<i32>,
+}

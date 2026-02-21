@@ -17,7 +17,10 @@ use crate::{
     state::AppState,
     storage::{
         db,
-        models::{AnalysisEvent, CreateStreamRequest, EventQuery, Stream, UpdateStreamRequest},
+        models::{
+            AnalysisEvent, CreateRuleRequest, CreateStreamRequest, EventQuery, Stream,
+            StreamRule, UpdateRuleRequest, UpdateStreamRequest,
+        },
     },
     streams::manager::{StreamManager, StreamRecord},
 };
@@ -305,7 +308,7 @@ pub async fn get_event(
     Ok(Json(event))
 }
 
-// ─── Test Twilio alert (for development) ───────────────────────────────────────
+// ─── Test Twilio alert (for development) ─────────────────────────────────────
 
 /// POST /api/test-twilio — Sends one test SMS via Twilio. Use to verify Twilio env and ALERT_PHONE_NUMBER.
 pub async fn test_twilio_alert() -> impl IntoResponse {
@@ -317,4 +320,89 @@ pub async fn test_twilio_alert() -> impl IntoResponse {
     Json(serde_json::json!({
         "message": "Test alert triggered. Check ALERT_PHONE_NUMBER for SMS (and backend logs if none)."
     }))
+}
+
+// ─── Stream Rules ─────────────────────────────────────────────────────────────
+
+#[utoipa::path(
+    get,
+    path = "/api/streams/{id}/rules",
+    tag = "rules",
+    params(("id" = Uuid, Path, description = "Stream ID")),
+    responses(
+        (status = 200, description = "Rules for the stream", body = Vec<StreamRule>)
+    )
+)]
+pub async fn list_rules(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse> {
+    let rules = db::list_rules(&state.db, id).await?;
+    Ok(Json(rules))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/streams/{id}/rules",
+    tag = "rules",
+    params(("id" = Uuid, Path, description = "Stream ID")),
+    request_body = CreateRuleRequest,
+    responses(
+        (status = 201, description = "Rule created", body = StreamRule),
+        (status = 404, description = "Stream not found")
+    )
+)]
+pub async fn create_rule(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<CreateRuleRequest>,
+) -> Result<impl IntoResponse> {
+    // Ensure the stream exists first.
+    db::get_stream(&state.db, id).await?;
+    let rule = db::create_rule(&state.db, id, &req).await?;
+    Ok((StatusCode::CREATED, Json(rule)))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/streams/{id}/rules/{rule_id}",
+    tag = "rules",
+    params(
+        ("id" = Uuid, Path, description = "Stream ID"),
+        ("rule_id" = Uuid, Path, description = "Rule ID"),
+    ),
+    request_body = UpdateRuleRequest,
+    responses(
+        (status = 200, description = "Rule updated", body = StreamRule),
+        (status = 404, description = "Rule not found")
+    )
+)]
+pub async fn update_rule(
+    State(state): State<Arc<AppState>>,
+    Path((id, rule_id)): Path<(Uuid, Uuid)>,
+    Json(req): Json<UpdateRuleRequest>,
+) -> Result<impl IntoResponse> {
+    let rule = db::update_rule(&state.db, rule_id, id, &req).await?;
+    Ok(Json(rule))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/streams/{id}/rules/{rule_id}",
+    tag = "rules",
+    params(
+        ("id" = Uuid, Path, description = "Stream ID"),
+        ("rule_id" = Uuid, Path, description = "Rule ID"),
+    ),
+    responses(
+        (status = 204, description = "Rule deleted"),
+        (status = 404, description = "Rule not found")
+    )
+)]
+pub async fn delete_rule(
+    State(state): State<Arc<AppState>>,
+    Path((id, rule_id)): Path<(Uuid, Uuid)>,
+) -> Result<impl IntoResponse> {
+    db::delete_rule(&state.db, rule_id, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
