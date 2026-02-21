@@ -57,4 +57,4 @@ build-iPhoneSimulator/
 
 .env
 /.claude/
-/target/
+/backend/target/
