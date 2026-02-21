@@ -49,6 +49,7 @@ import {
   CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "./ui/card";
@@ -252,7 +253,7 @@ export function SidebarLeft({
 }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar className="border-r-0" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="gap-4">
         <TeamSwitcher teams={data.teams} />
         <div className="relative">
           <HugeiconsIcon
@@ -291,17 +292,19 @@ export function SidebarLeft({
           </AlertDialogContent>
         </AlertDialog>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-4">
         <NavCamera cameras={data.cameras} />
 
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Gloal Prompt</CardTitle>
             <CardDescription>Please fill the global prompt</CardDescription>
-            <CardAction></CardAction>
           </CardHeader>
           <CardContent>
             <Textarea />
+            <CardAction className="mt-4">
+              <Button>Save</Button>
+            </CardAction>
           </CardContent>
         </Card>
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
