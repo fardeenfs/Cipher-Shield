@@ -4,7 +4,7 @@ use serde_json::Value;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-/// Mirrors the `streams` table.
+/// Mirrors the `streams` table. Stream = camera (position, rotation, optional phone for alerts).
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct Stream {
     pub id: Uuid,
@@ -13,6 +13,10 @@ pub struct Stream {
     pub source_url: String,
     pub capture_interval_sec: i32,
     pub enabled: bool,
+    pub position_x: f64,
+    pub position_y: f64,
+    pub rotation: f64,
+    pub phone_number: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -40,6 +44,10 @@ pub struct UpdateStreamRequest {
     pub source_url: Option<String>,
     pub capture_interval_sec: Option<i32>,
     pub enabled: Option<bool>,
+    pub position_x: Option<f64>,
+    pub position_y: Option<f64>,
+    pub rotation: Option<f64>,
+    pub phone_number: Option<String>,
 }
 
 /// Mirrors the `analysis_events` table.

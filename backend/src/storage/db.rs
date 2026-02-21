@@ -17,7 +17,8 @@ pub async fn list_streams(db: &PgPool) -> Result<Vec<Stream>> {
     let rows = sqlx::query_as!(
         Stream,
         r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                  enabled, created_at, updated_at
+                  enabled, position_x, position_y, rotation, phone_number,
+                  created_at, updated_at
            FROM streams
            ORDER BY created_at ASC"#
     )
@@ -30,7 +31,8 @@ pub async fn get_stream(db: &PgPool, id: Uuid) -> Result<Stream> {
     sqlx::query_as!(
         Stream,
         r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                  enabled, created_at, updated_at
+                  enabled, position_x, position_y, rotation, phone_number,
+                  created_at, updated_at
            FROM streams WHERE id = $1"#,
         id
     )
@@ -45,7 +47,8 @@ pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Str
         r#"INSERT INTO streams (name, source_type, source_url, capture_interval_sec, enabled)
            VALUES ($1, $2, $3, $4, $5)
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, created_at, updated_at"#,
+                     enabled, position_x, position_y, rotation, phone_number,
+                     created_at, updated_at"#,
         req.name,
         req.source_type,
         req.source_url,
@@ -58,7 +61,6 @@ pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Str
 }
 
 pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> Result<Stream> {
-    // Fetch current values and apply patches
     let current = get_stream(db, id).await?;
 
     let row = sqlx::query_as!(
@@ -69,16 +71,29 @@ pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> 
                source_url           = $4,
                capture_interval_sec = $5,
                enabled              = $6,
+               position_x           = $7,
+               position_y           = $8,
+               rotation             = $9,
+               phone_number         = $10,
                updated_at           = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, created_at, updated_at"#,
+                     enabled, position_x, position_y, rotation, phone_number,
+                     created_at, updated_at"#,
         id,
         req.name.as_deref().unwrap_or(&current.name),
         req.source_type.as_deref().unwrap_or(&current.source_type),
         req.source_url.as_deref().unwrap_or(&current.source_url),
         req.capture_interval_sec.unwrap_or(current.capture_interval_sec),
         req.enabled.unwrap_or(current.enabled),
+        req.position_x.unwrap_or(current.position_x),
+        req.position_y.unwrap_or(current.position_y),
+        req.rotation.unwrap_or(current.rotation),
+        match &req.phone_number {
+            None => current.phone_number.clone(),
+            Some(s) if s.is_empty() => None,
+            Some(s) => Some(s.clone()),
+        },
     )
     .fetch_one(db)
     .await?;
@@ -104,7 +119,8 @@ pub async fn set_stream_enabled(db: &PgPool, id: Uuid, enabled: bool) -> Result<
         r#"UPDATE streams SET enabled = $2, updated_at = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, created_at, updated_at"#,
+                     enabled, position_x, position_y, rotation, phone_number,
+                     created_at, updated_at"#,
         id,
         enabled,
     )
