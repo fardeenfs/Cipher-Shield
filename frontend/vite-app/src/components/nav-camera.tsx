@@ -45,7 +45,20 @@ export function NavCamera({
   }[];
 }) {
   const { isMobile } = useSidebar();
-
+  const onDragStart = (
+    event: React.DragEvent,
+    cameraData: {
+      name: string;
+      description: string;
+    },
+  ) => {
+    // Store the camera info so the canvas knows what kind of node to create
+    event.dataTransfer.setData(
+      "application/reactflow",
+      JSON.stringify(cameraData),
+    );
+    event.dataTransfer.effectAllowed = "move";
+  };
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel className="flex justify-between items-center">
@@ -65,13 +78,15 @@ export function NavCamera({
           {cameras.map((camera) => (
             <SidebarMenuItem key={camera.name}>
               <Item
+                draggable // Enable native dragging
+                onDragStart={(e) => onDragStart(e, camera)}
                 variant="outline"
                 asChild
                 role="listitem"
                 className="w-full"
               >
-                <a
-                  href={`/stream/${camera.name}`}
+                <div
+                  // href={`/stream/${camera.name}`}
                   className="flex items-center gap-3"
                 >
                   <ItemMedia variant="image">
@@ -85,12 +100,21 @@ export function NavCamera({
                   </ItemMedia>
 
                   <ItemContent className="flex-col items-start gap-1">
-                    <ItemTitle>{camera.name}</ItemTitle>
-                    <ItemDescription className="line-clamp-1">
+                    <ItemTitle className="flex items-center gap-2">
+                      <span>{camera.name}</span>
+
+                      {/* Pulse */}
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary shadow-[0_0_8px_var(--color-primary)]"></span>
+                      </span>
+                    </ItemTitle>
+
+                    <ItemDescription className="line-clamp-1 text-muted-foreground">
                       {camera.description}
                     </ItemDescription>
                   </ItemContent>
-                </a>
+                </div>
               </Item>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -41,22 +41,22 @@ const nodeTypes = {
   cameraNode: CameraNode,
 };
 const initialNodes: Node[] = [
-  {
-    id: "n1",
-    position: { x: 0, y: 0 },
-    data: { label: "Node 1" },
-    type: "cameraNode",
-  },
-  {
-    id: "n2",
-    position: { x: 0, y: 100 },
-    data: { label: "Node 2" },
-    type: "cameraNode",
-  },
+  // {
+  //   id: "n1",
+  //   position: { x: 0, y: 0 },
+  //   data: { label: "Node 1" },
+  //   type: "cameraNode",
+  // },
+  // {
+  //   id: "n2",
+  //   position: { x: 0, y: 100 },
+  //   data: { label: "Node 2" },
+  //   type: "cameraNode",
+  // },
   {
     id: "n3",
     type: "imageNode",
-    data: { label: "Node 4" },
+    data: { label: "Node 4", showBlindSpot: true },
     position: { x: 0, y: 0 },
     zIndex: -1,
     draggable: false,
@@ -67,7 +67,7 @@ const initialEdges: Edge[] = [];
 
 //  component manages its own state DO NOT TOUCH IT!!!.
 const FlowEditor = React.memo(() => {
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
   useEffect(() => {
     function handleResize() {
       fitView();
@@ -88,6 +88,45 @@ const FlowEditor = React.memo(() => {
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [],
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      // Retrieve the camera data from the drag event
+      const dataStr = event.dataTransfer.getData("application/reactflow");
+      if (!dataStr) return;
+
+      const cameraData = JSON.parse(dataStr);
+      if (nodes.filter((i) => i.data.label === cameraData.name).length > 0) {
+        return;
+      }
+
+      // Convert mouse position to canvas coordinates
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      const newNode: Node = {
+        id: `camera-${Date.now()}`,
+        type: "cameraNode",
+        position,
+        data: {
+          label: cameraData.name,
+          rotation: 0,
+        },
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [screenToFlowPosition, nodes],
   );
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -112,23 +151,29 @@ const FlowEditor = React.memo(() => {
   }, []);
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      colorMode="dark"
-      autoPanOnNodeDrag={false}
-      onConnect={onConnect}
-      panOnDrag={false}
-      zoomOnScroll={false}
-      nodeExtent={[
-        [0, 0],
-        [600, 400],
-      ]}
-      fitView
-    ></ReactFlow>
+    <div
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      style={{ width: "100%", height: "100%" }}
+    >
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        colorMode="dark"
+        autoPanOnNodeDrag={false}
+        onConnect={onConnect}
+        panOnDrag={false}
+        zoomOnScroll={false}
+        nodeExtent={[
+          [0, 0],
+          [600, 400],
+        ]}
+        fitView
+      ></ReactFlow>
+    </div>
   );
 });
 

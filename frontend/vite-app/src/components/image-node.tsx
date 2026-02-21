@@ -1,10 +1,23 @@
 import { memo } from "react";
-import { useNodes } from "@xyflow/react";
+import {
+  useNodes,
+  useNodesData,
+  type Node,
+  type NodeProps,
+} from "@xyflow/react";
 import img from "../assets/blueprint-1.jpg";
 import { BOUNDS } from "@/lib/constants";
+type ImageNodeDATA = {
+  label: string;
+  showBlindSpot: boolean;
+};
+type ImgNode = Node<ImageNodeDATA, "camera">;
 
-const ImageNode = ({ showBlindSpot = true }: { showBlindSpot?: boolean }) => {
+const ImageNode = ({ id }: NodeProps<ImgNode>) => {
   const nodes = useNodes();
+  const nodeData = useNodesData(id);
+  const showBlindSpot = nodeData?.showBlindSpot ?? true;
+
   const cameras = nodes.filter((n) => n.type === "cameraNode");
 
   const BEAM_LENGTH = 250;
