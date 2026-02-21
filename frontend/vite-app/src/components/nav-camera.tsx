@@ -35,6 +35,8 @@ import {
 } from "./ui/item";
 import { ScrollBlur } from "./scroll-blur";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Link } from "@tanstack/react-router";
 
 export function NavCamera({
   cameras,
@@ -101,7 +103,13 @@ export function NavCamera({
 
                   <ItemContent className="flex-col items-start gap-1">
                     <ItemTitle className="flex items-center gap-2">
-                      <span>{camera.name}</span>
+                      <Link
+                        to="/stream/$id"
+                        params={{ id: camera.name }}
+                        className="font-medium hover:underline hover:decoration-foreground hover:decoration-2 underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                      >
+                        {camera.name}
+                      </Link>
 
                       {/* Pulse */}
                       <span className="relative flex h-2 w-2 shrink-0">

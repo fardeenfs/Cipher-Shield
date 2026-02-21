@@ -26,7 +26,8 @@ export function DatePicker() {
           selected={range}
           onSelect={setRange}
           captionLayout="dropdown"
-          className="bg-transparent [--cell-size:2.1rem]"
+          className="bg-transparent"
+          // className="bg-transparent [--cell-size:1.5rem]"
         />
       </SidebarGroupContent>
     </SidebarGroup>
