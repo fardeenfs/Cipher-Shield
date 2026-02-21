@@ -120,5 +120,14 @@ async fn process_frame(
     // Broadcast to WebSocket subscribers (ignore if no subscribers)
     let _ = event_tx.send(event);
 
+    // High risk only: send Twilio SMS alert (fire-and-forget)
+    if result.risk_level == RiskLevel::High {
+        let stream_name = frame.stream_name.clone();
+        let description = result.description.clone();
+        tokio::spawn(async move {
+            crate::notifications::twilio::send_alert(&stream_name, "high", &description).await;
+        });
+    }
+
     Ok(())
 }

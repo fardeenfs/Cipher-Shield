@@ -304,3 +304,17 @@ pub async fn get_event(
     let event = db::get_event(&state.db, id).await?;
     Ok(Json(event))
 }
+
+// ─── Test Twilio alert (for development) ───────────────────────────────────────
+
+/// POST /api/test-twilio — Sends one test SMS via Twilio. Use to verify Twilio env and ALERT_PHONE_NUMBER.
+pub async fn test_twilio_alert() -> impl IntoResponse {
+    tokio::spawn(crate::notifications::twilio::send_alert(
+        "test-stream",
+        "high",
+        "This is a test alert from Cipher-Shield.",
+    ));
+    Json(serde_json::json!({
+        "message": "Test alert triggered. Check ALERT_PHONE_NUMBER for SMS (and backend logs if none)."
+    }))
+}

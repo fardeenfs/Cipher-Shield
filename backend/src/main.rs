@@ -2,6 +2,7 @@ mod analysis;
 mod api;
 mod config;
 mod error;
+mod notifications;
 mod state;
 mod storage;
 mod streams;
