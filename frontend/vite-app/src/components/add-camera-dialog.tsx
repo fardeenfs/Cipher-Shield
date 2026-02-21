@@ -17,14 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Field, FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Camera01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import { Camera01Icon, PlusSignIcon, Alert01Icon } from "@hugeicons/core-free-icons";
 import { SidebarMenuButton } from "./ui/sidebar";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { streamsMutations, streamsQueries } from "@/lib/queries";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function AddCameraDialog() {
   const [open, setOpen] = useState(false);
@@ -32,6 +32,8 @@ export function AddCameraDialog() {
   const [sourceType, setSourceType] = useState("usb");
   const [sourceUrl, setSourceUrl] = useState("");
   const [interval, setIntervalVal] = useState("3");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [apiErrorMsg, setApiErrorMsg] = useState("");
 
   const queryClient = useQueryClient();
   const { data: streams } = useQuery(streamsQueries.list());
@@ -39,16 +41,19 @@ export function AddCameraDialog() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setApiErrorMsg("");
+
     if (!name || !sourceUrl) {
-      alert("Name and URL are required");
+      setErrorMsg("Name and URL are required");
       return;
     }
 
     if (streams?.some((stream) => stream.source_url === sourceUrl)) {
-      alert("A camera with this URL or Device ID already exists.");
+      setErrorMsg("A camera with this URL or Device ID already exists.");
       return;
     }
 
+    setErrorMsg("");
     createStream.mutate(
       {
         name,
@@ -64,10 +69,11 @@ export function AddCameraDialog() {
           setSourceUrl("");
           setSourceType("usb");
           setIntervalVal("3");
+          setApiErrorMsg("");
         },
         onError: (error) => {
           console.error("Failed to add stream:", error);
-          alert("Failed to add stream: " + error.message);
+          setApiErrorMsg(error.message);
         },
       }
     );
@@ -95,21 +101,34 @@ export function AddCameraDialog() {
           </DialogHeader>
 
           <FieldGroup className="py-4">
+            {apiErrorMsg && (
+              <Alert variant="destructive" className="mb-2">
+                <HugeiconsIcon icon={Alert01Icon} size={16} />
+                <AlertTitle>Failed to add stream</AlertTitle>
+                <AlertDescription>
+                  {apiErrorMsg}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Camera Name */}
             <Field>
-              <Label htmlFor="stream-name">Name</Label>
+              <FieldLabel htmlFor="stream-name">Name</FieldLabel>
               <Input
                 id="stream-name"
                 placeholder="e.g. Front Door"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setErrorMsg("");
+                }}
               />
             </Field>
 
             {/* Stream Source */}
             <Field>
-              <Label htmlFor="source">Source</Label>
+              <FieldLabel htmlFor="source">Source</FieldLabel>
               <Select value={sourceType} onValueChange={setSourceType}>
                 <SelectTrigger id="source">
                   <SelectValue placeholder="Select source" />
@@ -124,20 +143,29 @@ export function AddCameraDialog() {
             </Field>
 
             {/* Device ID / URL */}
-            <Field>
-              <Label htmlFor="device-id">URL or Device ID</Label>
+            <Field data-invalid={!!errorMsg}>
+              <FieldLabel htmlFor="device-id">URL or Device ID</FieldLabel>
               <Input
                 id="device-id"
                 placeholder="Enter connection string"
                 value={sourceUrl}
-                onChange={(e) => setSourceUrl(e.target.value)}
+                onChange={(e) => {
+                  setSourceUrl(e.target.value);
+                  setErrorMsg("");
+                }}
                 required
+                aria-invalid={!!errorMsg}
               />
+              {errorMsg && (
+                <FieldDescription className="text-destructive">
+                  {errorMsg}
+                </FieldDescription>
+              )}
             </Field>
 
             {/* Interval Setting */}
             <Field>
-              <Label htmlFor="interval">Refresh Interval (seconds)</Label>
+              <FieldLabel htmlFor="interval">Refresh Interval (seconds)</FieldLabel>
               <Input
                 id="interval"
                 type="number"
@@ -146,9 +174,9 @@ export function AddCameraDialog() {
                 value={interval}
                 onChange={(e) => setIntervalVal(e.target.value)}
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <FieldDescription>
                 Recommended range: 3 - 5 seconds.
-              </p>
+              </FieldDescription>
             </Field>
           </FieldGroup>
 

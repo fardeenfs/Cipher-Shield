@@ -1,3 +1,4 @@
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import * as React from "react";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,7 @@ const queryClient = new QueryClient()
 function RootComponent() {
   return (
     <React.Fragment>
+      <NuqsAdapter>
       <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SidebarProvider>
@@ -25,6 +27,7 @@ function RootComponent() {
         </SidebarProvider>
       </TooltipProvider>
       </QueryClientProvider>
+      </NuqsAdapter>
     </React.Fragment>
   );
 }
