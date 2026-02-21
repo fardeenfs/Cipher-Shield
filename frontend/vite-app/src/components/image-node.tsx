@@ -1,5 +1,6 @@
 import { memo } from "react";
 import img from "../assets/blueprint-1.jpg";
+import { BOUNDS } from "@/lib/constants";
 const ImageNode = () => {
   return (
     <div
@@ -8,8 +9,8 @@ const ImageNode = () => {
         backgroundSize: "contain",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
-        height: 400,
-        width: 600,
+        height: BOUNDS.height,
+        width: BOUNDS.width,
         pointerEvents: "none",
       }}
     ></div>

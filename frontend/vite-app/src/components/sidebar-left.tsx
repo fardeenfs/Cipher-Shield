@@ -1,43 +1,75 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { NavFavorites } from "@/components/nav-favorites"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavWorkspaces } from "@/components/nav-workspaces"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavCamera } from "@/components/nav-camera";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavWorkspaces } from "@/components/nav-workspaces";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { CommandIcon, AudioWave01Icon, SearchIcon, SparklesIcon, HomeIcon, InboxIcon, CalendarIcon, Settings05Icon, CubeIcon, Delete02Icon, MessageQuestionIcon } from "@hugeicons/core-free-icons"
+} from "@/components/ui/sidebar";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  CommandIcon,
+  AudioWave01Icon,
+  SearchIcon,
+  SparklesIcon,
+  HomeIcon,
+  InboxIcon,
+  CalendarIcon,
+  Settings05Icon,
+  CubeIcon,
+  Delete02Icon,
+  MessageQuestionIcon,
+  PlusSignIcon,
+  BluetoothIcon,
+  Search,
+} from "@hugeicons/core-free-icons";
+import { Button } from "./ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
+import { Input } from "./ui/input";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Textarea } from "./ui/textarea";
 
 // This is sample data.
 const data = {
   teams: [
     {
       name: "Acme Inc",
-      logo: (
-        <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />
-      ),
+      logo: <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />,
       plan: "Enterprise",
     },
     {
       name: "Acme Corp.",
-      logo: (
-        <HugeiconsIcon icon={AudioWave01Icon} strokeWidth={2} />
-      ),
+      logo: <HugeiconsIcon icon={AudioWave01Icon} strokeWidth={2} />,
       plan: "Startup",
     },
     {
       name: "Evil Corp.",
-      logo: (
-        <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />
-      ),
+      logo: <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />,
       plan: "Free",
     },
   ],
@@ -45,31 +77,23 @@ const data = {
     {
       title: "Search",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />,
     },
     {
       title: "Ask AI",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />,
     },
     {
       title: "Home",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={HomeIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={HomeIcon} strokeWidth={2} />,
       isActive: true,
     },
     {
       title: "Inbox",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />,
       badge: "10",
     },
   ],
@@ -77,89 +101,41 @@ const data = {
     {
       title: "Calendar",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={CalendarIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={CalendarIcon} strokeWidth={2} />,
     },
     {
       title: "Settings",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />,
     },
     {
       title: "Templates",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={CubeIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={CubeIcon} strokeWidth={2} />,
     },
     {
       title: "Trash",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />,
     },
     {
       title: "Help",
       url: "#",
-      icon: (
-        <HugeiconsIcon icon={MessageQuestionIcon} strokeWidth={2} />
-      ),
+      icon: <HugeiconsIcon icon={MessageQuestionIcon} strokeWidth={2} />,
     },
   ],
-  favorites: [
+  cameras: [
     {
-      name: "Project Management & Task Tracking",
-      url: "#",
-      emoji: "📊",
+      name: "Camera 1",
+      description: "Some description",
     },
     {
-      name: "Family Recipe Collection & Meal Planning",
-      url: "#",
-      emoji: "🍳",
+      name: "Camera 2",
+      description: "Some description",
     },
     {
-      name: "Fitness Tracker & Workout Routines",
-      url: "#",
-      emoji: "💪",
-    },
-    {
-      name: "Book Notes & Reading List",
-      url: "#",
-      emoji: "📚",
-    },
-    {
-      name: "Sustainable Gardening Tips & Plant Care",
-      url: "#",
-      emoji: "🌱",
-    },
-    {
-      name: "Language Learning Progress & Resources",
-      url: "#",
-      emoji: "🗣️",
-    },
-    {
-      name: "Home Renovation Ideas & Budget Tracker",
-      url: "#",
-      emoji: "🏠",
-    },
-    {
-      name: "Personal Finance & Investment Portfolio",
-      url: "#",
-      emoji: "💰",
-    },
-    {
-      name: "Movie & TV Show Watchlist with Reviews",
-      url: "#",
-      emoji: "🎬",
-    },
-    {
-      name: "Daily Habit Tracker & Goal Setting",
-      url: "#",
-      emoji: "✅",
+      name: "Camera 3",
+      description: "Some description",
     },
   ],
   workspaces: [
@@ -269,7 +245,7 @@ const data = {
       ],
     },
   ],
-}
+};
 
 export function SidebarLeft({
   ...props
@@ -278,14 +254,60 @@ export function SidebarLeft({
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
-        <NavMain items={data.navMain} />
+        <div className="relative">
+          <HugeiconsIcon
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            icon={Search}
+            strokeWidth={2}
+          />
+          <Input type="search" placeholder="Search..." className="pl-9" />
+        </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button>
+              <HugeiconsIcon
+                icon={PlusSignIcon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              Add Camera
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogMedia>
+                <HugeiconsIcon icon={BluetoothIcon} strokeWidth={2} />
+              </AlertDialogMedia>
+              <AlertDialogTitle>Allow accessory to connect?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Do you want to allow the USB accessory to connect to this
+                device?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Don&apos;t allow</AlertDialogCancel>
+              <AlertDialogAction>Allow</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SidebarHeader>
       <SidebarContent>
-        <NavFavorites favorites={data.favorites} />
-        <NavWorkspaces workspaces={data.workspaces} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavCamera cameras={data.cameras} />
+
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Gloal Prompt</CardTitle>
+            <CardDescription>Please fill the global prompt</CardDescription>
+            <CardAction></CardAction>
+          </CardHeader>
+          <CardContent>
+            <Textarea />
+          </CardContent>
+        </Card>
+        {/* <NavWorkspaces workspaces={data.workspaces} /> */}
+        {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

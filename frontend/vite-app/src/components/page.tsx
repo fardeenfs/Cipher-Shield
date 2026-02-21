@@ -34,6 +34,8 @@ import {
 import GridLoader from "./grid-loader";
 import ImageNode from "./image-node";
 import CameraNode from "./camera-node";
+import { BOUNDS } from "@/lib/constants";
+import { TooltipProvider } from "./ui/tooltip";
 const nodeTypes = {
   imageNode: ImageNode,
   cameraNode: CameraNode,
@@ -88,31 +90,26 @@ const FlowEditor = React.memo(() => {
     [],
   );
 
-  const BOUNDS = { width: 600, height: 400 };
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const nextChanges = changes.map((change) => {
+      if (change.type === "position" && change.position) {
+        const { x, y } = change.position;
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      const nextChanges = changes.map((change) => {
-        if (change.type === "position" && change.position) {
-          const { x, y } = change.position;
+        // Clamp the values between 0 and the max width/height
+        // Note: We subtract a small amount (like 40) so the node doesn't sit exactly on the edge
+        return {
+          ...change,
+          position: {
+            x: Math.max(0, Math.min(x, BOUNDS.width - 50)),
+            y: Math.max(0, Math.min(y, BOUNDS.height - 40)),
+          },
+        };
+      }
+      return change;
+    });
 
-          // Clamp the values between 0 and the max width/height
-          // Note: We subtract a small amount (like 40) so the node doesn't sit exactly on the edge
-          return {
-            ...change,
-            position: {
-              x: Math.max(0, Math.min(x, BOUNDS.width - 50)),
-              y: Math.max(0, Math.min(y, BOUNDS.height - 40)),
-            },
-          };
-        }
-        return change;
-      });
-
-      setNodes((nds) => applyNodeChanges(nextChanges, nds));
-    },
-    [BOUNDS.width, BOUNDS.height],
-  );
+    setNodes((nds) => applyNodeChanges(nextChanges, nds));
+  }, []);
 
   return (
     <ReactFlow
@@ -131,9 +128,7 @@ const FlowEditor = React.memo(() => {
         [600, 400],
       ]}
       fitView
-    >
-      <Background color="#ccc" />
-    </ReactFlow>
+    ></ReactFlow>
   );
 });
 
@@ -141,36 +136,38 @@ FlowEditor.displayName = "FlowEditor";
 
 export default function Page() {
   return (
-    <SidebarProvider>
-      <SidebarLeft />
-      <SidebarInset className="flex h-svh flex-col overflow-hidden">
-        <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b">
-          <div className="flex flex-1 items-center gap-2 px-3">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Project Management</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
+    <TooltipProvider>
+      <SidebarProvider>
+        <SidebarLeft />
+        <SidebarInset className="flex h-svh flex-col overflow-hidden">
+          <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b">
+            <div className="flex flex-1 items-center gap-2 px-3">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Project Management</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          </header>
 
-        <main className="relative flex-1 bg-background">
-          <div className="absolute inset-0 overflow-hidden">
-            <ReactFlowProvider>
-              <FlowEditor />
-            </ReactFlowProvider>
-          </div>
+          <main className="relative flex-1 bg-background">
+            <div className="absolute inset-0 overflow-hidden">
+              <ReactFlowProvider>
+                <FlowEditor />
+              </ReactFlowProvider>
+            </div>
 
-          <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-            <GridLoader />
-          </div>
-        </main>
-      </SidebarInset>
-      <SidebarRight />
-    </SidebarProvider>
+            <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+              <GridLoader />
+            </div>
+          </main>
+        </SidebarInset>
+        <SidebarRight />
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
