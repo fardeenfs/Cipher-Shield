@@ -57,14 +57,6 @@ pub fn router(state: Arc<AppState>, stream_manager: Arc<StreamManager>) -> Route
                 .put(routes::update_blueprint)
                 .delete(routes::delete_blueprint),
         )
-        .route(
-            "/api/blueprints/:id/cameras",
-            get(routes::list_blueprint_cameras).post(routes::create_blueprint_camera),
-        )
-        .route(
-            "/api/blueprints/:blueprint_id/cameras/:camera_id",
-            put(routes::update_blueprint_camera).delete(routes::delete_blueprint_camera),
-        )
         // WebSocket
         .route("/ws/events", get(ws::ws_handler))
         // Shared state

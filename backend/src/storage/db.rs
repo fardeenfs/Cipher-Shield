@@ -6,9 +6,9 @@ use uuid::Uuid;
 use crate::{
     error::{AppError, Result},
     storage::models::{
-        AnalysisEvent, Blueprint, BlueprintCamera, BlueprintSummary,
-        CreateRuleRequest, CreateStreamRequest, EventQuery, Stream, StreamRule,
-        UpdateBlueprintCameraRequest, UpdateRuleRequest, UpdateStreamRequest,
+        AnalysisEvent, Blueprint, BlueprintSummary, CreateRuleRequest,
+        CreateStreamRequest, EventQuery, Stream, StreamRule, UpdateRuleRequest,
+        UpdateStreamRequest,
     },
 };
 
@@ -371,107 +371,6 @@ pub async fn delete_blueprint(db: &PgPool, id: Uuid) -> Result<()> {
             .await?;
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound(format!("Blueprint {id} not found")));
-    }
-    Ok(())
-}
-
-// ─── Blueprint cameras ───────────────────────────────────────────────────────
-
-pub async fn list_blueprint_cameras(db: &PgPool, blueprint_id: Uuid) -> Result<Vec<BlueprintCamera>> {
-    let rows = sqlx::query_as!(
-        BlueprintCamera,
-        r#"SELECT id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at
-           FROM blueprint_cameras WHERE blueprint_id = $1 ORDER BY created_at ASC"#,
-        blueprint_id
-    )
-    .fetch_all(db)
-    .await?;
-    Ok(rows)
-}
-
-pub async fn create_blueprint_camera(
-    db: &PgPool,
-    blueprint_id: Uuid,
-    label: &str,
-    position_x: f64,
-    position_y: f64,
-    rotation: f64,
-) -> Result<BlueprintCamera> {
-    let row = sqlx::query_as!(
-        BlueprintCamera,
-        r#"INSERT INTO blueprint_cameras (blueprint_id, label, position_x, position_y, rotation)
-           VALUES ($1, $2, $3, $4, $5)
-           RETURNING id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at"#,
-        blueprint_id,
-        label,
-        position_x,
-        position_y,
-        rotation,
-    )
-    .fetch_one(db)
-    .await?;
-    Ok(row)
-}
-
-pub async fn update_blueprint_camera(
-    db: &PgPool,
-    camera_id: Uuid,
-    blueprint_id: Uuid,
-    req: &UpdateBlueprintCameraRequest,
-) -> Result<BlueprintCamera> {
-    let current = get_blueprint_camera(db, camera_id, blueprint_id).await?;
-    let label = req.label.as_deref().unwrap_or(&current.label);
-    let position_x = req.position_x.unwrap_or(current.position_x);
-    let position_y = req.position_y.unwrap_or(current.position_y);
-    let rotation = req.rotation.unwrap_or(current.rotation);
-    let row = sqlx::query_as!(
-        BlueprintCamera,
-        r#"UPDATE blueprint_cameras SET label = $3, position_x = $4, position_y = $5, rotation = $6, updated_at = NOW()
-           WHERE id = $1 AND blueprint_id = $2
-           RETURNING id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at"#,
-        camera_id,
-        blueprint_id,
-        label,
-        position_x,
-        position_y,
-        rotation,
-    )
-    .fetch_one(db)
-    .await?;
-    Ok(row)
-}
-
-pub async fn get_blueprint_camera(
-    db: &PgPool,
-    camera_id: Uuid,
-    blueprint_id: Uuid,
-) -> Result<BlueprintCamera> {
-    sqlx::query_as!(
-        BlueprintCamera,
-        r#"SELECT id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at
-           FROM blueprint_cameras WHERE id = $1 AND blueprint_id = $2"#,
-        camera_id,
-        blueprint_id,
-    )
-    .fetch_optional(db)
-    .await?
-    .ok_or_else(|| AppError::NotFound(format!("Blueprint camera {camera_id} not found")))
-}
-
-pub async fn delete_blueprint_camera(
-    db: &PgPool,
-    camera_id: Uuid,
-    blueprint_id: Uuid,
-) -> Result<()> {
-    let result: sqlx::postgres::PgQueryResult = sqlx::query!(
-        "DELETE FROM blueprint_cameras WHERE id = $1 AND blueprint_id = $2",
-        camera_id,
-        blueprint_id,
-    )
-    .execute(db)
-    .await?;
-    if result.rows_affected() == 0 {
-        return Err(AppError::NotFound(format!("Blueprint camera {camera_id} not found")));
     }
     Ok(())
 }

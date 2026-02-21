@@ -20,9 +20,8 @@ use crate::{
     storage::{
         db,
         models::{
-            BlueprintCamera, BlueprintResponse, BlueprintSummary,
-            CreateBlueprintCameraRequest, CreateBlueprintRequest, CreateRuleRequest,
-            CreateStreamRequest, EventQuery, UpdateBlueprintCameraRequest,
+            BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
+            CreateRuleRequest, CreateStreamRequest, EventQuery,
             UpdateBlueprintRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
     },
@@ -469,107 +468,6 @@ pub async fn delete_blueprint(
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     db::delete_blueprint(&state.db, id).await?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
-// ─── Blueprint cameras ────────────────────────────────────────────────────────
-
-#[utoipa::path(
-    get,
-    path = "/api/blueprints/{id}/cameras",
-    tag = "blueprints",
-    params(("id" = Uuid, Path, description = "Blueprint ID")),
-    responses(
-        (status = 200, description = "Cameras on this blueprint", body = Vec<BlueprintCamera>),
-        (status = 404, description = "Blueprint not found")
-    )
-)]
-pub async fn list_blueprint_cameras(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<Uuid>,
-) -> Result<impl IntoResponse> {
-    let cameras = db::list_blueprint_cameras(&state.db, id).await?;
-    Ok(Json(cameras))
-}
-
-#[utoipa::path(
-    post,
-    path = "/api/blueprints/{id}/cameras",
-    tag = "blueprints",
-    params(("id" = Uuid, Path, description = "Blueprint ID")),
-    request_body = CreateBlueprintCameraRequest,
-    responses(
-        (status = 201, description = "Camera added", body = BlueprintCamera),
-        (status = 404, description = "Blueprint not found")
-    )
-)]
-pub async fn create_blueprint_camera(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<Uuid>,
-    Json(req): Json<CreateBlueprintCameraRequest>,
-) -> Result<impl IntoResponse> {
-    let _ = db::get_blueprint(&state.db, id).await?;
-    let label = req.label.unwrap_or_else(|| "Camera".into());
-    let position_x = req.position_x.unwrap_or(0.0);
-    let position_y = req.position_y.unwrap_or(0.0);
-    let rotation = req.rotation.unwrap_or(0.0);
-    let camera = db::create_blueprint_camera(
-        &state.db,
-        id,
-        &label,
-        position_x,
-        position_y,
-        rotation,
-    ).await?;
-    Ok((StatusCode::CREATED, Json(camera)))
-}
-
-#[utoipa::path(
-    put,
-    path = "/api/blueprints/{blueprint_id}/cameras/{camera_id}",
-    tag = "blueprints",
-    params(
-        ("blueprint_id" = Uuid, Path, description = "Blueprint ID"),
-        ("camera_id" = Uuid, Path, description = "Camera ID"),
-    ),
-    request_body = UpdateBlueprintCameraRequest,
-    responses(
-        (status = 200, description = "Camera updated", body = BlueprintCamera),
-        (status = 404, description = "Not found")
-    )
-)]
-pub async fn update_blueprint_camera(
-    State(state): State<Arc<AppState>>,
-    Path((blueprint_id, camera_id)): Path<(Uuid, Uuid)>,
-    Json(req): Json<UpdateBlueprintCameraRequest>,
-) -> Result<impl IntoResponse> {
-    let camera = db::update_blueprint_camera(
-        &state.db,
-        camera_id,
-        blueprint_id,
-        &req,
-    ).await?;
-    Ok(Json(camera))
-}
-
-#[utoipa::path(
-    delete,
-    path = "/api/blueprints/{blueprint_id}/cameras/{camera_id}",
-    tag = "blueprints",
-    params(
-        ("blueprint_id" = Uuid, Path, description = "Blueprint ID"),
-        ("camera_id" = Uuid, Path, description = "Camera ID"),
-    ),
-    responses(
-        (status = 204, description = "Camera deleted"),
-        (status = 404, description = "Not found")
-    )
-)]
-pub async fn delete_blueprint_camera(
-    State(state): State<Arc<AppState>>,
-    Path((blueprint_id, camera_id)): Path<(Uuid, Uuid)>,
-) -> Result<impl IntoResponse> {
-    db::delete_blueprint_camera(&state.db, camera_id, blueprint_id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

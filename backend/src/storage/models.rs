@@ -156,36 +156,3 @@ pub struct UpdateBlueprintRequest {
     pub name: Option<String>,
     pub image_base64: Option<String>,
 }
-
-/// Camera placed on a blueprint (position, rotation).
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
-pub struct BlueprintCamera {
-    pub id: Uuid,
-    pub blueprint_id: Uuid,
-    pub label: String,
-    pub position_x: f64,
-    pub position_y: f64,
-    pub rotation: f64,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct CreateBlueprintCameraRequest {
-    #[serde(default)]
-    pub label: Option<String>,
-    #[serde(default)]
-    pub position_x: Option<f64>,
-    #[serde(default)]
-    pub position_y: Option<f64>,
-    #[serde(default)]
-    pub rotation: Option<f64>,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct UpdateBlueprintCameraRequest {
-    pub label: Option<String>,
-    pub position_x: Option<f64>,
-    pub position_y: Option<f64>,
-    pub rotation: Option<f64>,
-}
