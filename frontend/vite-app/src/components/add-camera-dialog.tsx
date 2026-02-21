@@ -23,8 +23,8 @@ import { Label } from "@/components/ui/label";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Camera01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { SidebarMenuButton } from "./ui/sidebar";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { streamsMutations } from "@/lib/queries";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { streamsMutations, streamsQueries } from "@/lib/queries";
 
 export function AddCameraDialog() {
   const [open, setOpen] = useState(false);
@@ -34,12 +34,18 @@ export function AddCameraDialog() {
   const [interval, setIntervalVal] = useState("3");
 
   const queryClient = useQueryClient();
+  const { data: streams } = useQuery(streamsQueries.list());
   const createStream = useMutation(streamsMutations.create(queryClient));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !sourceUrl) {
       alert("Name and URL are required");
+      return;
+    }
+
+    if (streams?.some((stream) => stream.source_url === sourceUrl)) {
+      alert("A camera with this URL or Device ID already exists.");
       return;
     }
 
