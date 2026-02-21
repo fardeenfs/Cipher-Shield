@@ -142,7 +142,7 @@ export function SidebarRight({
           <SidebarMenuItem>
             <SidebarMenuButton>
               <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-              <span>New Calendar</span>
+              <span>Replace blueprint</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
