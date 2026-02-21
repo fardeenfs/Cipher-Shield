@@ -6,8 +6,9 @@ use uuid::Uuid;
 use crate::{
     error::{AppError, Result},
     storage::models::{
-        AnalysisEvent, CreateRuleRequest, CreateStreamRequest, EventQuery, Stream,
-        StreamRule, UpdateRuleRequest, UpdateStreamRequest,
+        AnalysisEvent, Blueprint, BlueprintCamera, BlueprintSummary,
+        CreateRuleRequest, CreateStreamRequest, EventQuery, Stream, StreamRule,
+        UpdateBlueprintCameraRequest, UpdateRuleRequest, UpdateStreamRequest,
     },
 };
 
@@ -278,6 +279,183 @@ pub async fn delete_rule(db: &PgPool, rule_id: Uuid, stream_id: Uuid) -> Result<
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound(format!("Rule {rule_id} not found")));
+    }
+    Ok(())
+}
+
+// ─── Blueprints ──────────────────────────────────────────────────────────────
+
+pub async fn list_blueprints(db: &PgPool) -> Result<Vec<BlueprintSummary>> {
+    let rows = sqlx::query_as!(
+        BlueprintSummary,
+        r#"SELECT id, name, created_at, updated_at FROM blueprints ORDER BY created_at ASC"#
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn get_blueprint(db: &PgPool, id: Uuid) -> Result<Blueprint> {
+    sqlx::query_as!(
+        Blueprint,
+        r#"SELECT id, name, image_data, created_at, updated_at FROM blueprints WHERE id = $1"#,
+        id
+    )
+    .fetch_optional(db)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Blueprint {id} not found")))
+}
+
+pub async fn create_blueprint(
+    db: &PgPool,
+    name: &str,
+    image_data: Option<&[u8]>,
+) -> Result<Blueprint> {
+    let row = sqlx::query_as!(
+        Blueprint,
+        r#"INSERT INTO blueprints (name, image_data) VALUES ($1, $2)
+           RETURNING id, name, image_data, created_at, updated_at"#,
+        name,
+        image_data,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn update_blueprint(
+    db: &PgPool,
+    id: Uuid,
+    name: Option<&str>,
+    image_data: Option<&[u8]>,
+) -> Result<Blueprint> {
+    let current = get_blueprint(db, id).await?;
+    let name = name.unwrap_or(&current.name);
+    let image_data = match image_data {
+        Some(b) => Some(b),
+        None => current.image_data.as_deref(),
+    };
+    let row = sqlx::query_as!(
+        Blueprint,
+        r#"UPDATE blueprints SET name = $2, image_data = $3, updated_at = NOW()
+           WHERE id = $1 RETURNING id, name, image_data, created_at, updated_at"#,
+        id,
+        name,
+        image_data,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn delete_blueprint(db: &PgPool, id: Uuid) -> Result<()> {
+    let result: sqlx::postgres::PgQueryResult =
+        sqlx::query!("DELETE FROM blueprints WHERE id = $1", id)
+            .execute(db)
+            .await?;
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound(format!("Blueprint {id} not found")));
+    }
+    Ok(())
+}
+
+// ─── Blueprint cameras ───────────────────────────────────────────────────────
+
+pub async fn list_blueprint_cameras(db: &PgPool, blueprint_id: Uuid) -> Result<Vec<BlueprintCamera>> {
+    let rows = sqlx::query_as!(
+        BlueprintCamera,
+        r#"SELECT id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at
+           FROM blueprint_cameras WHERE blueprint_id = $1 ORDER BY created_at ASC"#,
+        blueprint_id
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn create_blueprint_camera(
+    db: &PgPool,
+    blueprint_id: Uuid,
+    label: &str,
+    position_x: f64,
+    position_y: f64,
+    rotation: f64,
+) -> Result<BlueprintCamera> {
+    let row = sqlx::query_as!(
+        BlueprintCamera,
+        r#"INSERT INTO blueprint_cameras (blueprint_id, label, position_x, position_y, rotation)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at"#,
+        blueprint_id,
+        label,
+        position_x,
+        position_y,
+        rotation,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn update_blueprint_camera(
+    db: &PgPool,
+    camera_id: Uuid,
+    blueprint_id: Uuid,
+    req: &UpdateBlueprintCameraRequest,
+) -> Result<BlueprintCamera> {
+    let current = get_blueprint_camera(db, camera_id, blueprint_id).await?;
+    let label = req.label.as_deref().unwrap_or(&current.label);
+    let position_x = req.position_x.unwrap_or(current.position_x);
+    let position_y = req.position_y.unwrap_or(current.position_y);
+    let rotation = req.rotation.unwrap_or(current.rotation);
+    let row = sqlx::query_as!(
+        BlueprintCamera,
+        r#"UPDATE blueprint_cameras SET label = $3, position_x = $4, position_y = $5, rotation = $6, updated_at = NOW()
+           WHERE id = $1 AND blueprint_id = $2
+           RETURNING id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at"#,
+        camera_id,
+        blueprint_id,
+        label,
+        position_x,
+        position_y,
+        rotation,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn get_blueprint_camera(
+    db: &PgPool,
+    camera_id: Uuid,
+    blueprint_id: Uuid,
+) -> Result<BlueprintCamera> {
+    sqlx::query_as!(
+        BlueprintCamera,
+        r#"SELECT id, blueprint_id, label, position_x, position_y, rotation, created_at, updated_at
+           FROM blueprint_cameras WHERE id = $1 AND blueprint_id = $2"#,
+        camera_id,
+        blueprint_id,
+    )
+    .fetch_optional(db)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Blueprint camera {camera_id} not found")))
+}
+
+pub async fn delete_blueprint_camera(
+    db: &PgPool,
+    camera_id: Uuid,
+    blueprint_id: Uuid,
+) -> Result<()> {
+    let result: sqlx::postgres::PgQueryResult = sqlx::query!(
+        "DELETE FROM blueprint_cameras WHERE id = $1 AND blueprint_id = $2",
+        camera_id,
+        blueprint_id,
+    )
+    .execute(db)
+    .await?;
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound(format!("Blueprint camera {camera_id} not found")));
     }
     Ok(())
 }
