@@ -1,3 +1,4 @@
+pub mod openapi;
 pub mod routes;
 pub mod ws;
 
@@ -8,12 +9,16 @@ use axum::{
     Router,
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{state::AppState, streams::manager::StreamManager};
 
 /// Build the full Axum router.
 pub fn router(state: Arc<AppState>, stream_manager: Arc<StreamManager>) -> Router {
     Router::new()
+        // Swagger UI
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", openapi::ApiDoc::openapi()))
         // Health
         .route("/api/health", get(routes::health))
         // Streams CRUD

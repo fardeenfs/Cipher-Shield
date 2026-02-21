@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 /// Mirrors the `streams` table.
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct Stream {
     pub id: Uuid,
     pub name: String,
@@ -17,7 +18,7 @@ pub struct Stream {
 }
 
 /// Payload for creating a new stream via the REST API.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateStreamRequest {
     pub name: String,
     pub source_type: String,
@@ -32,7 +33,7 @@ fn default_interval() -> i32 { 5 }
 fn default_enabled() -> bool { true }
 
 /// Payload for updating an existing stream.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateStreamRequest {
     pub name: Option<String>,
     pub source_type: Option<String>,
@@ -42,7 +43,7 @@ pub struct UpdateStreamRequest {
 }
 
 /// Mirrors the `analysis_events` table.
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct AnalysisEvent {
     pub id: Uuid,
     pub stream_id: Uuid,
@@ -55,7 +56,7 @@ pub struct AnalysisEvent {
 }
 
 /// Query filters for listing analysis events.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct EventQuery {
     pub stream_id: Option<Uuid>,
     pub risk_level: Option<String>,
