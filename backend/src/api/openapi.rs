@@ -33,6 +33,7 @@ use super::routes;
         routes::create_rule,
         routes::update_rule,
         routes::delete_rule,
+        routes::test_twilio_alert,
     ),
     components(
         schemas(
@@ -46,10 +47,11 @@ use super::routes;
         )
     ),
     tags(
-        (name = "health",  description = "Service health check"),
-        (name = "streams", description = "Video stream management"),
-        (name = "events",  description = "Analysis event retrieval"),
-        (name = "rules",   description = "Per-stream VLM threat assessment rules"),
+        (name = "health",        description = "Service health check"),
+        (name = "streams",       description = "Video stream management"),
+        (name = "events",        description = "Analysis event retrieval"),
+        (name = "rules",         description = "Per-stream VLM threat assessment rules"),
+        (name = "notifications", description = "Alert / notification testing"),
     )
 )]
 pub struct ApiDoc;

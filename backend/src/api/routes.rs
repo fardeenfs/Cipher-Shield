@@ -310,7 +310,17 @@ pub async fn get_event(
 
 // ─── Test Twilio alert (for development) ─────────────────────────────────────
 
-/// POST /api/test-twilio — Sends one test SMS via Twilio. Use to verify Twilio env and ALERT_PHONE_NUMBER.
+#[utoipa::path(
+    post,
+    path = "/api/test-twilio",
+    tag = "notifications",
+    responses(
+        (status = 200, description = "Test SMS triggered",
+         body = serde_json::Value,
+         example = json!({"message": "Test alert triggered. Check ALERT_PHONE_NUMBER for SMS (and backend logs if none)."}))
+    )
+)]
+/// Sends one test SMS via Twilio. Use to verify Twilio env vars and ALERT_PHONE_NUMBER.
 pub async fn test_twilio_alert() -> impl IntoResponse {
     tokio::spawn(crate::notifications::twilio::send_alert(
         "test-stream",
