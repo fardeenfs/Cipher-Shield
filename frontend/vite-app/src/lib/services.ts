@@ -49,7 +49,8 @@ export interface ListEventsParams {
 }
 
 export const apiClient = axios.create({
-  baseURL: "/api",
+  // MARK: BASEURL HERE
+  baseURL: "http://localhost:8080/api",
   headers: {
     "Content-Type": "application/json",
   },
