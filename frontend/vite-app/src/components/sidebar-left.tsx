@@ -10,6 +10,7 @@ import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
@@ -54,6 +55,8 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Textarea } from "./ui/textarea";
+import { NavPrompts } from "./nav-prompts";
+import { AddCameraDialog } from "./add-camera-dialog";
 
 // This is sample data.
 const data = {
@@ -74,30 +77,7 @@ const data = {
       plan: "Free",
     },
   ],
-  navMain: [
-    {
-      title: "Search",
-      url: "#",
-      icon: <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />,
-    },
-    {
-      title: "Ask AI",
-      url: "#",
-      icon: <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />,
-    },
-    {
-      title: "Home",
-      url: "#",
-      icon: <HugeiconsIcon icon={HomeIcon} strokeWidth={2} />,
-      isActive: true,
-    },
-    {
-      title: "Inbox",
-      url: "#",
-      icon: <HugeiconsIcon icon={InboxIcon} strokeWidth={2} />,
-      badge: "10",
-    },
-  ],
+
   navSecondary: [
     {
       title: "Calendar",
@@ -138,112 +118,9 @@ const data = {
       name: "Camera 3",
       description: "Some description",
     },
-  ],
-  workspaces: [
     {
-      name: "Personal Life Management",
-      emoji: "🏠",
-      pages: [
-        {
-          name: "Daily Journal & Reflection",
-          url: "#",
-          emoji: "📔",
-        },
-        {
-          name: "Health & Wellness Tracker",
-          url: "#",
-          emoji: "🍏",
-        },
-        {
-          name: "Personal Growth & Learning Goals",
-          url: "#",
-          emoji: "🌟",
-        },
-      ],
-    },
-    {
-      name: "Professional Development",
-      emoji: "💼",
-      pages: [
-        {
-          name: "Career Objectives & Milestones",
-          url: "#",
-          emoji: "🎯",
-        },
-        {
-          name: "Skill Acquisition & Training Log",
-          url: "#",
-          emoji: "🧠",
-        },
-        {
-          name: "Networking Contacts & Events",
-          url: "#",
-          emoji: "🤝",
-        },
-      ],
-    },
-    {
-      name: "Creative Projects",
-      emoji: "🎨",
-      pages: [
-        {
-          name: "Writing Ideas & Story Outlines",
-          url: "#",
-          emoji: "✍️",
-        },
-        {
-          name: "Art & Design Portfolio",
-          url: "#",
-          emoji: "🖼️",
-        },
-        {
-          name: "Music Composition & Practice Log",
-          url: "#",
-          emoji: "🎵",
-        },
-      ],
-    },
-    {
-      name: "Home Management",
-      emoji: "🏡",
-      pages: [
-        {
-          name: "Household Budget & Expense Tracking",
-          url: "#",
-          emoji: "💰",
-        },
-        {
-          name: "Home Maintenance Schedule & Tasks",
-          url: "#",
-          emoji: "🔧",
-        },
-        {
-          name: "Family Calendar & Event Planning",
-          url: "#",
-          emoji: "📅",
-        },
-      ],
-    },
-    {
-      name: "Travel & Adventure",
-      emoji: "🧳",
-      pages: [
-        {
-          name: "Trip Planning & Itineraries",
-          url: "#",
-          emoji: "🗺️",
-        },
-        {
-          name: "Travel Bucket List & Inspiration",
-          url: "#",
-          emoji: "🌎",
-        },
-        {
-          name: "Travel Journal & Photo Gallery",
-          url: "#",
-          emoji: "📸",
-        },
-      ],
+      name: "Camera 4",
+      description: "Some description",
     },
   ],
 };
@@ -251,66 +128,47 @@ const data = {
 export function SidebarLeft({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
+  // const [prompts, setPrompts] = React.useState<string[]>([]);
+  // const [inputText, setInputText] = React.useState("");
+
+  // const handleSave = () => {
+  //   if (inputText.trim() !== "") {
+  //     setPrompts([...prompts, inputText]);
+  //     setInputText("");
+  //   }
+  // };
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader className="gap-4">
         <TeamSwitcher teams={data.teams} />
-        <div className="relative">
-          <HugeiconsIcon
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            icon={Search}
-            strokeWidth={2}
-          />
-          <Input type="search" placeholder="Search..." className="pl-9" />
-        </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button>
-              <HugeiconsIcon
-                icon={PlusSignIcon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              Add Camera
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent size="sm">
-            <AlertDialogHeader>
-              <AlertDialogMedia>
-                <HugeiconsIcon icon={BluetoothIcon} strokeWidth={2} />
-              </AlertDialogMedia>
-              <AlertDialogTitle>Allow accessory to connect?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Do you want to allow the USB accessory to connect to this
-                device?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Don&apos;t allow</AlertDialogCancel>
-              <AlertDialogAction>Allow</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
+        <AddCameraDialog />
       </SidebarHeader>
       <SidebarContent className="gap-4">
         <NavCamera cameras={data.cameras} />
-
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Gloal Prompt</CardTitle>
-            <CardDescription>Please fill the global prompt</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea />
-            <CardAction className="mt-4">
-              <Button>Save</Button>
-            </CardAction>
-          </CardContent>
-        </Card>
+        {/* <NavPrompts prompts={prompts} /> */}
         {/* <NavWorkspaces workspaces={data.workspaces} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarRail />
+      {/* <SidebarFooter>
+        <Card className="w-full max-w-md" size="sm">
+          <CardHeader>
+            <CardTitle>Global Prompt</CardTitle>
+            <CardDescription>Please fill the global prompt</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Type your prompt here..."
+            />
+            <div className="mt-4">
+              <Button onClick={handleSave}>Save</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </SidebarFooter> */}
     </Sidebar>
   );
 }
