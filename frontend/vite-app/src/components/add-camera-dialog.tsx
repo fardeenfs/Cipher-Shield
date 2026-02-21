@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Camera01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
+import { SidebarMenuButton } from "./ui/sidebar";
 
 export function AddCameraDialog() {
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,10 +33,10 @@ export function AddCameraDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>
-          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} className="mr-2" />
-          Add Camera
-        </Button>
+        <SidebarMenuButton>
+          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+          <span> Add Camera</span>
+        </SidebarMenuButton>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">

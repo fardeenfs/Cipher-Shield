@@ -6,12 +6,14 @@ import { NavCamera } from "@/components/nav-camera";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavWorkspaces } from "@/components/nav-workspaces";
-import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -139,11 +141,7 @@ export function SidebarLeft({
   // };
   return (
     <Sidebar className="border-r-0" {...props}>
-      <SidebarHeader className="gap-4">
-        <TeamSwitcher teams={data.teams} />
-
-        <AddCameraDialog />
-      </SidebarHeader>
+      <SidebarHeader className="gap-4 border-sidebar-border h-14 border-b"></SidebarHeader>
       <SidebarContent className="gap-4">
         <NavCamera cameras={data.cameras} />
         {/* <NavPrompts prompts={prompts} /> */}
@@ -169,6 +167,14 @@ export function SidebarLeft({
           </CardContent>
         </Card>
       </SidebarFooter> */}
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <AddCameraDialog />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

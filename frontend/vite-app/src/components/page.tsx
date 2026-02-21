@@ -181,38 +181,32 @@ FlowEditor.displayName = "FlowEditor";
 
 export default function Page() {
   return (
-    <TooltipProvider>
-      <SidebarProvider>
-        <SidebarLeft />
-        <SidebarInset className="flex h-svh flex-col overflow-hidden">
-          <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b">
-            <div className="flex flex-1 items-center gap-2 px-3">
-              <SidebarTrigger />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Project Management</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
+    <>
+      <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b">
+        <div className="flex flex-1 items-center gap-2 px-3">
+          <SidebarTrigger />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Project Management</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
 
-          <main className="relative flex-1 bg-background">
-            <div className="absolute inset-0 overflow-hidden">
-              <ReactFlowProvider>
-                <FlowEditor />
-              </ReactFlowProvider>
-            </div>
+      <main className="relative flex-1 bg-background">
+        <div className="absolute inset-0 overflow-hidden">
+          <ReactFlowProvider>
+            <FlowEditor />
+          </ReactFlowProvider>
+        </div>
 
-            <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-              <GridLoader />
-            </div>
-          </main>
-        </SidebarInset>
-        <SidebarRight />
-      </SidebarProvider>
-    </TooltipProvider>
+        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <GridLoader />
+        </div>
+      </main>
+    </>
   );
 }
