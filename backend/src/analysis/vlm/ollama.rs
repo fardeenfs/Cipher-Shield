@@ -35,7 +35,6 @@ struct GenerateRequest<'a> {
     /// Base64-encoded images (no data URI prefix).
     images: Vec<String>,
     stream: bool,
-    format: &'a str,
 }
 
 #[derive(Deserialize)]
@@ -59,7 +58,6 @@ impl super::VlmClient for OllamaClient {
             system: SYSTEM_PROMPT,
             images: vec![b64],
             stream: false,
-            format: "json",
         };
 
         let url = format!("{}/api/generate", self.base_url);

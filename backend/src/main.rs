@@ -19,7 +19,7 @@ use crate::{
     config::AppConfig,
     state::AppState,
     storage::models::AnalysisEvent,
-    streams::manager::StreamManager,
+    streams::{frame_store::FrameStore, manager::StreamManager},
 };
 
 #[tokio::main]
@@ -59,8 +59,11 @@ async fn main() -> anyhow::Result<()> {
     // Event broadcast: analysis workers → WebSocket subscribers
     let (event_tx, _) = broadcast::channel::<AnalysisEvent>(256);
 
+    // ── Frame store ───────────────────────────────────────────────────────────
+    let frame_store = FrameStore::new();
+
     // ── App state ─────────────────────────────────────────────────────────────
-    let state = AppState::new(db.clone(), Arc::clone(&vlm), event_tx.clone());
+    let state = AppState::new(db.clone(), Arc::clone(&vlm), event_tx.clone(), Arc::clone(&frame_store));
 
     // ── Analysis worker pool ──────────────────────────────────────────────────
     let worker_pool = AnalysisWorkerPool::new(
@@ -72,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
     tokio::spawn(async move { worker_pool.run(frame_rx).await });
 
     // ── Stream manager ────────────────────────────────────────────────────────
-    let stream_manager = StreamManager::new(db.clone(), frame_tx);
+    let stream_manager = StreamManager::new(db.clone(), frame_tx, Arc::clone(&frame_store));
     stream_manager.start_all().await?;
     let stream_manager = Arc::new(stream_manager);
 

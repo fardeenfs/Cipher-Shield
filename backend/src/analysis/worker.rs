@@ -25,12 +25,7 @@ impl AnalysisWorkerPool {
         db: PgPool,
         event_tx: broadcast::Sender<AnalysisEvent>,
     ) -> Self {
-        Self {
-            worker_count,
-            vlm,
-            db,
-            event_tx,
-        }
+        Self { worker_count, vlm, db, event_tx }
     }
 
     /// Consumes from `frame_rx` using `worker_count` concurrent tasks.

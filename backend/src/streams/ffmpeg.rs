@@ -1,8 +1,8 @@
 /// FFmpeg-based frame capturer for RTSP, MJPEG, and local USB cameras.
 ///
-/// Strategy: spawn `ffmpeg` as a subprocess, emit one JPEG frame every
-/// `interval` seconds to stdout via `image2pipe`, and split the raw pipe
-/// output into individual frames using JPEG SOI/EOI byte markers.
+/// Strategy: spawn `ffmpeg` at LIVE_FPS for smooth live view, push every frame
+/// to the FrameStore (served by the MJPEG live endpoint), and forward only one
+/// frame per `interval` to the VLM analysis queue.
 ///
 /// Prerequisites
 /// ─────────────
@@ -11,6 +11,7 @@
 ///   e.g. `"Integrated Camera"`.  Obtainable with:
 ///   `ffmpeg -list_devices true -f dshow -i dummy`
 /// • Linux USB cameras: use `/dev/video0` (or similar).
+use std::sync::Arc;
 use std::time::Duration;
 
 use tokio::{
@@ -22,7 +23,14 @@ use tokio::{
 use tracing::{error, info, warn};
 use uuid::Uuid;
 
-use crate::streams::source::{CapturedFrame, SourceType};
+use crate::streams::{
+    frame_store::FrameStore,
+    source::{CapturedFrame, SourceType},
+};
+
+/// Frames per second for live MJPEG view.
+/// The analysis interval is enforced separately by throttling the analysis queue.
+const LIVE_FPS: u32 = 15;
 
 pub struct FfmpegCapturer {
     pub stream_id: Uuid,
@@ -30,7 +38,10 @@ pub struct FfmpegCapturer {
     pub source_type: SourceType,
     /// RTSP/MJPEG URL, or device identifier for USB cameras.
     pub source_url: String,
+    /// How often to forward a frame to the VLM analysis queue.
     pub interval: Duration,
+    /// Live frame store – every captured frame is pushed here for the MJPEG endpoint.
+    pub frame_store: Arc<FrameStore>,
 }
 
 impl FfmpegCapturer {
@@ -48,7 +59,15 @@ impl FfmpegCapturer {
                 }
             };
 
-            if let Err(e) = Self::pipe_frames(child, &self.stream_id, &self.stream_name, &tx).await
+            if let Err(e) = Self::pipe_frames(
+                child,
+                &self.stream_id,
+                &self.stream_name,
+                &self.interval,
+                &self.frame_store,
+                &tx,
+            )
+            .await
             {
                 warn!(stream = %self.stream_name, "ffmpeg pipe ended: {e}. Restarting in 3 s…");
                 sleep(Duration::from_secs(3)).await;
@@ -60,21 +79,22 @@ impl FfmpegCapturer {
     }
 
     fn build_command(&self) -> Command {
-        // fps = 1 / interval_secs  → e.g. interval=5s → fps=0.2
-        let fps = format!("1/{}", self.interval.as_secs().max(1));
-
         let mut cmd = Command::new("ffmpeg");
         cmd.stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null())
+            .stderr(std::process::Stdio::inherit())
             // overwrite without prompt
             .arg("-y");
 
+        // -strict unofficial must be placed AFTER -i (as an output option) so it
+        // actually reaches the mjpeg encoder. Placing it before -i as a global
+        // flag is silently ignored by some ffmpeg builds.
         match &self.source_type {
             SourceType::Rtsp => {
                 cmd.args([
                     "-rtsp_transport", "tcp",
                     "-i", &self.source_url,
-                    "-vf", &format!("fps={fps}"),
+                    "-vf", &format!("fps={LIVE_FPS}"),
+                    "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "pipe:1",
@@ -83,7 +103,8 @@ impl FfmpegCapturer {
             SourceType::Mjpeg => {
                 cmd.args([
                     "-i", &self.source_url,
-                    "-vf", &format!("fps={fps}"),
+                    "-vf", &format!("fps={LIVE_FPS}"),
+                    "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "pipe:1",
@@ -94,7 +115,8 @@ impl FfmpegCapturer {
                 cmd.args([
                     "-f", "dshow",
                     "-i", &format!("video={}", self.source_url),
-                    "-vf", &format!("fps={fps}"),
+                    "-vf", &format!("fps={LIVE_FPS}"),
+                    "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "pipe:1",
@@ -103,8 +125,9 @@ impl FfmpegCapturer {
                 #[cfg(target_os = "linux")]
                 cmd.args([
                     "-f", "v4l2",
-                    "-i", &self.source_url,  // e.g. /dev/video0
-                    "-vf", &format!("fps={fps}"),
+                    "-i", &self.source_url,
+                    "-vf", &format!("fps={LIVE_FPS}"),
+                    "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "pipe:1",
@@ -113,8 +136,9 @@ impl FfmpegCapturer {
                 #[cfg(target_os = "macos")]
                 cmd.args([
                     "-f", "avfoundation",
-                    "-i", &self.source_url,  // e.g. "0" for the first camera
-                    "-vf", &format!("fps={fps}"),
+                    "-i", &self.source_url,
+                    "-vf", &format!("fps={LIVE_FPS}"),
+                    "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "pipe:1",
@@ -133,6 +157,8 @@ impl FfmpegCapturer {
         mut child: tokio::process::Child,
         stream_id: &Uuid,
         stream_name: &str,
+        interval: &Duration,
+        frame_store: &Arc<FrameStore>,
         tx: &mpsc::Sender<CapturedFrame>,
     ) -> anyhow::Result<()> {
         let stdout = child
@@ -143,6 +169,9 @@ impl FfmpegCapturer {
         let mut reader = tokio::io::BufReader::new(stdout);
         let mut buf = Vec::with_capacity(512 * 1024);
         let mut chunk = vec![0u8; 65536];
+
+        // Initialise so the very first frame triggers an analysis send immediately.
+        let mut last_analysis = std::time::Instant::now() - *interval;
 
         loop {
             let n = reader.read(&mut chunk).await?;
@@ -157,17 +186,32 @@ impl FfmpegCapturer {
             buf = remainder;
 
             for frame_data in frames {
-                let frame = CapturedFrame {
-                    stream_id: *stream_id,
-                    stream_name: stream_name.to_string(),
-                    data: frame_data,
-                    captured_at: chrono::Utc::now(),
-                };
+                // Always push to FrameStore for smooth live MJPEG view.
+                frame_store.push(*stream_id, frame_data.clone()).await;
 
-                if tx.send(frame).await.is_err() {
-                    // Receiver dropped – signal caller to stop.
-                    child.kill().await.ok();
-                    return Ok(());
+                // Only forward to the analysis queue at the configured interval.
+                if last_analysis.elapsed() >= *interval {
+                    last_analysis = std::time::Instant::now();
+                    let frame = CapturedFrame {
+                        stream_id: *stream_id,
+                        stream_name: stream_name.to_string(),
+                        data: frame_data,
+                        captured_at: chrono::Utc::now(),
+                    };
+                    // try_send: if the analysis queue is full (VLM still busy),
+                    // drop this frame rather than blocking or building a backlog.
+                    use tokio::sync::mpsc::error::TrySendError;
+                    match tx.try_send(frame) {
+                        Ok(()) => {}
+                        Err(TrySendError::Full(_)) => {
+                            // VLM is still processing; skip frame, try again next interval.
+                        }
+                        Err(TrySendError::Closed(_)) => {
+                            // Receiver dropped – stop gracefully.
+                            child.kill().await.ok();
+                            return Ok(());
+                        }
+                    }
                 }
             }
         }

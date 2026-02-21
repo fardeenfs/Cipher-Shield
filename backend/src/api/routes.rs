@@ -1,15 +1,19 @@
 use std::sync::Arc;
 
 use axum::{
+    body::Body,
     extract::{Path, Query, State},
-    http::StatusCode,
-    response::IntoResponse,
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
     Json,
 };
+use bytes::Bytes;
+use futures::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 use uuid::Uuid;
 
 use crate::{
-    error::Result,
+    error::{AppError, Result},
     state::AppState,
     storage::{
         db,
@@ -121,6 +125,49 @@ pub async fn disable_stream(
     let stream = db::set_stream_enabled(&state.db, id, false).await?;
     manager.stop_stream(id).await;
     Ok(Json(stream))
+}
+
+// ─── Live frame endpoints ─────────────────────────────────────────────────────
+
+/// Returns the most recently captured JPEG frame for a stream.
+pub async fn snapshot(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse> {
+    let frame = state
+        .frame_store
+        .get_latest(id)
+        .await
+        .ok_or_else(|| AppError::NotFound("No frame captured yet".into()))?;
+
+    Ok(([(header::CONTENT_TYPE, "image/jpeg")], frame))
+}
+
+/// Streams live MJPEG frames for a stream.
+/// Use as `<img src="/api/streams/:id/live">` — browsers handle MJPEG natively.
+pub async fn stream_live(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> impl IntoResponse {
+    let rx = state.frame_store.subscribe(id).await;
+
+    let frame_stream = BroadcastStream::new(rx).filter_map(|result| async move {
+        let frame: std::sync::Arc<Vec<u8>> = result.ok()?;
+        let header = format!(
+            "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {}\r\n\r\n",
+            frame.len()
+        );
+        let mut part = header.into_bytes();
+        part.extend_from_slice(&frame);
+        part.extend_from_slice(b"\r\n");
+        Some(Ok::<Bytes, std::convert::Infallible>(Bytes::from(part)))
+    });
+
+    Response::builder()
+        .header(header::CONTENT_TYPE, "multipart/x-mixed-replace; boundary=frame")
+        .header(header::CACHE_CONTROL, "no-cache")
+        .body(Body::from_stream(frame_stream))
+        .unwrap()
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────

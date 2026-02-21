@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::streams::{
     ffmpeg::FfmpegCapturer,
+    frame_store::FrameStore,
     snapshot::SnapshotCapturer,
     source::{CapturedFrame, SourceType},
 };
@@ -27,15 +28,17 @@ pub struct StreamRecord {
 pub struct StreamManager {
     db: PgPool,
     frame_tx: mpsc::Sender<CapturedFrame>,
+    frame_store: Arc<FrameStore>,
     /// Map of stream_id → running capture task handle.
     tasks: Arc<tokio::sync::Mutex<HashMap<Uuid, JoinHandle<()>>>>,
 }
 
 impl StreamManager {
-    pub fn new(db: PgPool, frame_tx: mpsc::Sender<CapturedFrame>) -> Self {
+    pub fn new(db: PgPool, frame_tx: mpsc::Sender<CapturedFrame>, frame_store: Arc<FrameStore>) -> Self {
         Self {
             db,
             frame_tx,
+            frame_store,
             tasks: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
         }
     }
@@ -63,6 +66,7 @@ impl StreamManager {
     pub async fn start_stream(&self, stream: StreamRecord) {
         let id = stream.id;
         let tx = self.frame_tx.clone();
+        let frame_store = Arc::clone(&self.frame_store);
         let interval = Duration::from_secs(stream.capture_interval_sec.max(1) as u64);
 
         let source_type: SourceType = match stream.source_type.parse() {
@@ -81,6 +85,7 @@ impl StreamManager {
                 stream_name: stream.name,
                 url: stream.source_url,
                 interval,
+                frame_store,
             };
             tokio::spawn(async move { capturer.run(tx).await })
         } else {
@@ -90,6 +95,7 @@ impl StreamManager {
                 source_type,
                 source_url: stream.source_url,
                 interval,
+                frame_store,
             };
             tokio::spawn(async move { capturer.run(tx).await })
         };

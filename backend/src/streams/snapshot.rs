@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use tokio::sync::mpsc;
@@ -5,7 +6,7 @@ use tokio::time::sleep;
 use tracing::{error, warn};
 use uuid::Uuid;
 
-use crate::streams::source::CapturedFrame;
+use crate::streams::{frame_store::FrameStore, source::CapturedFrame};
 
 /// Captures frames by performing a periodic HTTP GET on a snapshot URL.
 /// Most IP cameras expose a `/snapshot.jpg` or similar endpoint.
@@ -14,6 +15,7 @@ pub struct SnapshotCapturer {
     pub stream_name: String,
     pub url: String,
     pub interval: Duration,
+    pub frame_store: Arc<FrameStore>,
 }
 
 impl SnapshotCapturer {
@@ -29,10 +31,13 @@ impl SnapshotCapturer {
                 Ok(resp) if resp.status().is_success() => {
                     match resp.bytes().await {
                         Ok(bytes) => {
+                            let data = bytes.to_vec();
+                            // Push to FrameStore so the snapshot/live endpoints are fresh.
+                            self.frame_store.push(self.stream_id, data.clone()).await;
                             let frame = CapturedFrame {
                                 stream_id: self.stream_id,
                                 stream_name: self.stream_name.clone(),
-                                data: bytes.to_vec(),
+                                data,
                                 captured_at: chrono::Utc::now(),
                             };
                             if tx.send(frame).await.is_err() {

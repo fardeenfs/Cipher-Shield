@@ -381,6 +381,65 @@
       gap: 8px;
     }
 
+    /* ── Cameras Grid ─────────────────────────────────────────────── */
+    .cameras-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      align-content: start;
+    }
+
+    .camera-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .camera-feed {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      object-fit: contain;
+      display: block;
+    }
+
+    .camera-paused {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .camera-label {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--low);
+      box-shadow: 0 0 5px var(--low);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
     /* ── Scrollbar ────────────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -448,7 +507,10 @@
 <!-- ── Main ────────────────────────────────────────────────────────────── -->
 <main>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('live', this)">
+    <div class="tab active" onclick="switchTab('cameras', this)">
+      Cameras <span class="tab-count" id="camCount">0</span>
+    </div>
+    <div class="tab" onclick="switchTab('live', this)">
       Live Feed <span class="tab-count" id="liveCount">0</span>
     </div>
     <div class="tab" onclick="switchTab('history', this)">
@@ -456,8 +518,15 @@
     </div>
   </div>
 
+  <!-- Cameras tab -->
+  <div class="tab-panel active" id="tab-cameras">
+    <div class="cameras-grid" id="camerasGrid">
+      <div class="empty-state" style="grid-column:1/-1;margin-top:40px">No streams configured</div>
+    </div>
+  </div>
+
   <!-- Live tab -->
-  <div class="tab-panel active" id="tab-live">
+  <div class="tab-panel" id="tab-live">
     <div class="feed-toolbar">
       <span style="font-size:12px;color:var(--muted)">Filter:</span>
       <div class="filter-pills">
@@ -505,8 +574,8 @@
   const WS  = 'ws://localhost:8080/ws/events';
 
   // ── State ────────────────────────────────────────────────────────────────
-  let streams    = [];
-  let liveEvents = [];
+  let streams       = [];
+  let liveEvents    = [];
   let activeFilters = new Set();  // empty = show all
 
   // ── WebSocket ────────────────────────────────────────────────────────────
@@ -626,10 +695,36 @@
       const res = await fetch(`${API}/api/streams`);
       streams = await res.json();
       renderStreams();
+      renderCameras();
       syncHistoryStreamFilter();
     } catch (e) {
       toast('Could not reach backend', 'err');
     }
+  }
+
+  function renderCameras() {
+    const grid = document.getElementById('camerasGrid');
+    document.getElementById('camCount').textContent = streams.length;
+
+    if (!streams.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;margin-top:40px">No streams configured</div>';
+      return;
+    }
+
+    grid.innerHTML = streams.map(s => `
+      <div class="camera-tile">
+        ${s.enabled
+          ? `<img class="camera-feed" src="${API}/api/streams/${s.id}/live" alt="${s.name}" />`
+          : `<div class="camera-paused">Paused</div>`
+        }
+        <div class="camera-label">
+          ${s.enabled ? '<div class="live-dot"></div>' : ''}
+          <span class="sc-type">${s.source_type}</span>
+          <span style="flex:1">${s.name}</span>
+          <span style="color:var(--muted);font-size:11px;font-weight:400">${s.capture_interval_sec}s</span>
+        </div>
+      </div>
+    `).join('');
   }
 
   function renderStreams() {

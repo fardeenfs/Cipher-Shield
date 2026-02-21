@@ -26,6 +26,8 @@ pub fn router(state: Arc<AppState>, stream_manager: Arc<StreamManager>) -> Route
         )
         .route("/api/streams/:id/enable", post(routes::enable_stream))
         .route("/api/streams/:id/disable", post(routes::disable_stream))
+        .route("/api/streams/:id/snapshot", get(routes::snapshot))
+        .route("/api/streams/:id/live", get(routes::stream_live))
         // Events
         .route("/api/events", get(routes::list_events))
         .route("/api/events/:id", get(routes::get_event))
