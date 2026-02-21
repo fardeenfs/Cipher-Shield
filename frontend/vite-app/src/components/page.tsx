@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ReactFlow,
   applyNodeChanges,
@@ -12,6 +12,8 @@ import {
   type EdgeChange,
   type Connection,
   Background,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -63,6 +65,16 @@ const initialEdges: Edge[] = [];
 
 //  component manages its own state DO NOT TOUCH IT!!!.
 const FlowEditor = React.memo(() => {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    function handleResize() {
+      fitView();
+    }
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, [fitView]);
+
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
@@ -148,7 +160,9 @@ export default function Page() {
 
         <main className="relative flex-1 bg-background">
           <div className="absolute inset-0 overflow-hidden">
-            <FlowEditor />
+            <ReactFlowProvider>
+              <FlowEditor />
+            </ReactFlowProvider>
           </div>
 
           <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
