@@ -15,8 +15,8 @@ use crate::{
 // ─── Streams ──────────────────────────────────────────────────────────────────
 
 pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec<Stream>> {
-    let rows = if let Some(bid) = blueprint_id {
-        sqlx::query_as!(
+    let rows = match blueprint_id {
+        Some(bid) => sqlx::query_as!(
             Stream,
             r#"SELECT id, name, source_type, source_url, capture_interval_sec,
                       enabled, position_x, position_y, rotation, phone_number,
@@ -26,8 +26,9 @@ pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec
                ORDER BY created_at ASC"#,
             bid
         )
-    } else {
-        sqlx::query_as!(
+        .fetch_all(db)
+        .await?,
+        None => sqlx::query_as!(
             Stream,
             r#"SELECT id, name, source_type, source_url, capture_interval_sec,
                       enabled, position_x, position_y, rotation, phone_number,
@@ -35,9 +36,9 @@ pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec
                FROM streams
                ORDER BY created_at ASC"#
         )
-    }
-    .fetch_all(db)
-    .await?;
+        .fetch_all(db)
+        .await?,
+    };
     Ok(rows)
 }
 
