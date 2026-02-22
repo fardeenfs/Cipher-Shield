@@ -20,8 +20,8 @@ use crate::{
     storage::{
         db,
         models::{
-            BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
-            CreateRuleRequest, CreateStreamRequest, EventQuery, Stream, StreamQuery,
+            BlueprintResponse, CreateBlueprintRequest,
+            CreateRuleRequest, CreateStreamRequest, EventQuery, StreamQuery,
             UpdateBlueprintRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
     },
