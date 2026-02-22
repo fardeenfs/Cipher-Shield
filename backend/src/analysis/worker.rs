@@ -108,10 +108,14 @@ async fn process_frame(
         let t = s.trim();
         if t.is_empty() { None } else { Some(t) }
     });
-    let triggered_rule: Option<&str> = result.triggered_rule.as_deref().and_then(|s| {
-        let t = s.trim();
-        if t.is_empty() { None } else { Some(t) }
-    });
+    let triggered_rule: Option<&str> = if vlm_rules.is_empty() {
+        None
+    } else {
+        result.triggered_rule.as_deref().and_then(|s| {
+            let t = s.trim();
+            if t.is_empty() { None } else { Some(t) }
+        })
+    };
 
     // Persist to DB
     let event = db::insert_event(

@@ -68,7 +68,7 @@ Analyze the provided camera frame and respond ONLY with a valid JSON object usin
     }
   ],
   "risk_level": "one of: none, low, medium, high",
-  "triggered_rule": "Exact description text of the custom rule that determined the risk level, or null if no custom rule was used"
+  "triggered_rule": "Copy verbatim from the custom rule list, or null if no rule matched. Never invent a rule."
 }
 
 Return ONLY the JSON object. Do not include any other text, markdown, or explanation."#;
@@ -87,7 +87,7 @@ pub struct VlmRule {
 /// Returns an empty string when there are no rules.
 pub fn build_rules_prompt(rules: &[VlmRule]) -> String {
     if rules.is_empty() {
-        return String::new();
+        return "\n\nThere are no custom rules for this camera. Set triggered_rule to null.".to_string();
     }
 
     let mut out = String::from(
@@ -98,10 +98,10 @@ pub fn build_rules_prompt(rules: &[VlmRule]) -> String {
         out.push_str(&format!("- {}: {}\n", rule.threat_level.to_uppercase(), rule.description));
     }
     out.push_str(
-        "\nIf a rule matches what you see, use its threat level and set triggered_rule \
-         to the exact description text of that rule. \
+        "\nIf a rule matches what you see, use its threat level and set triggered_rule to that rule's description (copy verbatim from the list above). \
          If multiple rules match, use the highest level and set triggered_rule to that rule's description. \
-         If no custom rule matches, use your own judgment and set triggered_rule to null.",
+         If no rule matches, use your own judgment for risk_level and set triggered_rule to null. \
+         Do not invent or paraphrase a rule; triggered_rule must be either null or an exact copy from the list above.",
     );
     out
 }
