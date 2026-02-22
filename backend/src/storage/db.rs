@@ -255,6 +255,20 @@ pub async fn resolve_events_by_filter(
     Ok(qb.build().execute(db).await?.rows_affected())
 }
 
+/// Resolve specific events by ID (e.g. after user asks to resolve only certain descriptions).
+pub async fn resolve_events_by_ids(db: &PgPool, ids: &[Uuid]) -> Result<u64> {
+    if ids.is_empty() {
+        return Ok(0);
+    }
+    let mut qb = sqlx::QueryBuilder::new("UPDATE analysis_events SET status = 'resolved' WHERE status = 'unresolved' AND id IN (");
+    let mut sep = qb.separated(", ");
+    for id in ids {
+        sep.push_bind(id);
+    }
+    sep.push_unseparated(")");
+    Ok(qb.build().execute(db).await?.rows_affected())
+}
+
 // ─── Stream Rules ─────────────────────────────────────────────────────────────
 
 pub async fn list_rules(db: &PgPool, stream_id: Uuid) -> Result<Vec<StreamRule>> {
