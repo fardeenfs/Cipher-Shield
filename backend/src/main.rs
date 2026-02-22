@@ -1,5 +1,6 @@
 mod analysis;
 mod api;
+mod assistant;
 mod config;
 mod error;
 mod notifications;

@@ -1,8 +1,8 @@
 use utoipa::OpenApi;
 
 use crate::storage::models::{
-    AlertSettings, AnalysisEvent, BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
-    CreateRuleRequest, CreateStreamRequest, Stream, StreamRule,
+    AlertSettings, AnalysisEvent, AssistantChatRequest, BlueprintResponse, BlueprintSummary,
+    CreateBlueprintRequest, CreateRuleRequest, CreateStreamRequest, Stream, StreamRule,
     UpdateAlertSettings, UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
 };
 use super::routes;
@@ -28,6 +28,7 @@ use super::routes;
         routes::disable_stream,
         routes::snapshot,
         routes::stream_live,
+        routes::assistant_chat,
         routes::list_events,
         routes::get_event,
         routes::update_event,
@@ -60,9 +61,11 @@ use super::routes;
             UpdateBlueprintRequest,
             AlertSettings,
             UpdateAlertSettings,
+            AssistantChatRequest,
         )
     ),
     tags(
+        (name = "assistant", description = "AI assistant for app questions"),
         (name = "health",  description = "Service health check"),
         (name = "streams", description = "Video stream management"),
         (name = "events",  description = "Analysis event retrieval"),

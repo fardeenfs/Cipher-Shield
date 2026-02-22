@@ -260,7 +260,36 @@ pub async fn update_event_status(db: &PgPool, id: Uuid, status: &str) -> Result<
     )
     .fetch_optional(db)
     .await?;
-    row.ok_or_else(|| AppError::NotFound(format!("Event {id} not found")))
+    row    .ok_or_else(|| AppError::NotFound(format!("Event {id} not found")))
+}
+
+pub async fn resolve_events_by_filter(
+    db: &PgPool,
+    from: Option<DateTime<Utc>>,
+    to: Option<DateTime<Utc>>,
+    stream_id: Option<Uuid>,
+    risk_level: Option<&str>,
+) -> Result<u64> {
+    let mut qb = sqlx::QueryBuilder::new("UPDATE analysis_events SET status = 'resolved' WHERE status = 'unresolved'");
+    if let Some(f) = from { qb.push(" AND captured_at >= ").push_bind(f); }
+    if let Some(t) = to { qb.push(" AND captured_at <= ").push_bind(t); }
+    if let Some(sid) = stream_id { qb.push(" AND stream_id = ").push_bind(sid); }
+    if let Some(rl) = risk_level { qb.push(" AND risk_level = ").push_bind(rl); }
+    Ok(qb.build().execute(db).await?.rows_affected())
+}
+
+/// Resolve specific events by ID (e.g. after user asks to resolve only certain descriptions).
+pub async fn resolve_events_by_ids(db: &PgPool, ids: &[Uuid]) -> Result<u64> {
+    if ids.is_empty() {
+        return Ok(0);
+    }
+    let mut qb = sqlx::QueryBuilder::new("UPDATE analysis_events SET status = 'resolved' WHERE status = 'unresolved' AND id IN (");
+    let mut sep = qb.separated(", ");
+    for id in ids {
+        sep.push_bind(id);
+    }
+    sep.push_unseparated(")");
+    Ok(qb.build().execute(db).await?.rows_affected())
 }
 
 // ─── Stream Rules ─────────────────────────────────────────────────────────────
