@@ -8,6 +8,7 @@ import { SidebarRight } from "@/components/sidebar-right";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { TopBar } from "@/components/top-bar";
+import DynamicIsland from '@/components/dynamic-island';
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -21,7 +22,6 @@ function RootComponent() {
       <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="flex h-screen w-full flex-col overflow-hidden bg-card">
-          
           <div className="relative flex-1 overflow-hidden">
             <SidebarProvider className="h-full min-h-full min-w-0">
               <SidebarLeft />
@@ -34,6 +34,9 @@ function RootComponent() {
               <SidebarRight />
             </SidebarProvider>
           </div>
+        </div>
+        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <DynamicIsland />
         </div>
       </TooltipProvider>
       </QueryClientProvider>

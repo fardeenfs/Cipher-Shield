@@ -21,7 +21,6 @@ import { streamsQueries, streamsMutations, blueprintsQueries } from "@/lib/queri
 import { useQueryState } from "nuqs";
 import { cn } from "@/lib/utils";
 
-import GridLoader from "./grid-loader";
 import ImageNode from "./image-node";
 import CameraNode from "./camera-node";
 import { BOUNDS } from "@/lib/constants";
@@ -297,7 +296,7 @@ export default function Page() {
       <main className="relative flex-1 bg-[#141414] overflow-hidden flex flex-col">
         {placedStreams.length > 0 ? (
             <div className=" flex justify-center py-2 z-10">
-              <Carousel opts={{ align: "start" }} className="w-full max-w-5xl">
+              <Carousel opts={{ align: "start" }} className="w-full max-w-4xl">
               <CarouselContent>
                 {placedStreams.map(stream => (
                   <CarouselItem key={stream.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
@@ -351,9 +350,7 @@ export default function Page() {
           </ReactFlowProvider>
         </div>
 
-        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <GridLoader />
-        </div>
+        
       </main>
     </>
   );

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
-export default function GridLoader({
+export default function DynamicIsland({
   className,
   ...props
 }: React.ComponentProps<"div">) {
