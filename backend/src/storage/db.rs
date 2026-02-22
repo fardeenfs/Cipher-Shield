@@ -17,7 +17,7 @@ use crate::{
 pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec<Stream>> {
     let mut qb = sqlx::QueryBuilder::new(
         "SELECT id, name, source_type, source_url, capture_interval_sec, \
-                enabled, position_x, position_y, rotation, phone_number, \
+                enabled, position_x, position_y, rotation, \
                 blueprint_id, created_at, updated_at \
          FROM streams WHERE 1=1",
     );
@@ -34,7 +34,7 @@ pub async fn get_stream(db: &PgPool, id: Uuid) -> Result<Stream> {
     sqlx::query_as!(
         Stream,
         r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                  enabled, position_x, position_y, rotation, phone_number,
+                  enabled, position_x, position_y, rotation,
                   blueprint_id, created_at, updated_at
            FROM streams WHERE id = $1"#,
         id
@@ -50,7 +50,7 @@ pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Str
         r#"INSERT INTO streams (name, source_type, source_url, capture_interval_sec, enabled, blueprint_id)
            VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, position_x, position_y, rotation, phone_number,
+                     enabled, position_x, position_y, rotation,
                      blueprint_id, created_at, updated_at"#,
         req.name,
         req.source_type,
@@ -82,12 +82,11 @@ pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> 
                position_x           = $7,
                position_y           = $8,
                rotation             = $9,
-               phone_number         = $10,
-               blueprint_id         = $11,
+               blueprint_id         = $10,
                updated_at           = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, position_x, position_y, rotation, phone_number,
+                     enabled, position_x, position_y, rotation,
                      blueprint_id, created_at, updated_at"#,
         id,
         req.name.as_deref().unwrap_or(&current.name),
@@ -98,11 +97,6 @@ pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> 
         req.position_x.unwrap_or(current.position_x),
         req.position_y.unwrap_or(current.position_y),
         req.rotation.unwrap_or(current.rotation),
-        match &req.phone_number {
-            None => current.phone_number.clone(),
-            Some(s) if s.is_empty() => None,
-            Some(s) => Some(s.clone()),
-        },
         blueprint_id,
     )
     .fetch_one(db)
@@ -129,7 +123,7 @@ pub async fn set_stream_enabled(db: &PgPool, id: Uuid, enabled: bool) -> Result<
         r#"UPDATE streams SET enabled = $2, updated_at = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, position_x, position_y, rotation, phone_number,
+                     enabled, position_x, position_y, rotation,
                      blueprint_id, created_at, updated_at"#,
         id,
         enabled,
@@ -139,6 +133,33 @@ pub async fn set_stream_enabled(db: &PgPool, id: Uuid, enabled: bool) -> Result<
     .ok_or_else(|| AppError::NotFound(format!("Stream {id} not found")))?;
 
     Ok(row)
+}
+
+// ─── App settings (global alert phone used when high risk) ────────────────────
+
+const ALERT_PHONE_KEY: &str = "alert_phone_number";
+
+pub async fn get_alert_phone_number(db: &PgPool) -> Result<Option<String>> {
+    let row = sqlx::query_scalar::<_, Option<String>>(
+        "SELECT value FROM app_settings WHERE key = $1",
+    )
+    .bind(ALERT_PHONE_KEY)
+    .fetch_optional(db)
+    .await?;
+    Ok(row.flatten().filter(|s| !s.trim().is_empty()))
+}
+
+pub async fn set_alert_phone_number(db: &PgPool, value: Option<&str>) -> Result<()> {
+    let value = value.map(|s| s.trim()).filter(|s| !s.is_empty());
+    sqlx::query(
+        r#"INSERT INTO app_settings (key, value) VALUES ($1, $2)
+           ON CONFLICT (key) DO UPDATE SET value = $2"#,
+    )
+    .bind(ALERT_PHONE_KEY)
+    .bind(value)
+    .execute(db)
+    .await?;
+    Ok(())
 }
 
 // ─── Analysis Events ──────────────────────────────────────────────────────────

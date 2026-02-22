@@ -56,7 +56,6 @@ export interface Stream {
   capture_interval_sec: number;
   enabled: boolean;
   blueprint_id?: string | null;
-  phone_number?: string | null;
   position_x: number;
   position_y: number;
   rotation: number;
@@ -71,7 +70,6 @@ export interface UpdateStreamRequest {
   source_type?: string | null;
   source_url?: string | null;
   blueprint_id?: string | null;
-  phone_number?: string | null;
   position_x?: number | null;
   position_y?: number | null;
   rotation?: number | null;

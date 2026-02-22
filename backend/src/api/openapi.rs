@@ -1,9 +1,9 @@
 use utoipa::OpenApi;
 
 use crate::storage::models::{
-    AnalysisEvent, BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
+    AlertSettings, AnalysisEvent, BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
     CreateRuleRequest, CreateStreamRequest, Stream, StreamRule,
-    UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
+    UpdateAlertSettings, UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
 };
 use super::routes;
 
@@ -40,6 +40,8 @@ use super::routes;
         routes::create_blueprint,
         routes::update_blueprint,
         routes::delete_blueprint,
+        routes::get_alert_phone_number,
+        routes::update_alert_phone_number,
         routes::test_twilio_alert,
     ),
     components(
@@ -56,6 +58,8 @@ use super::routes;
             BlueprintResponse,
             CreateBlueprintRequest,
             UpdateBlueprintRequest,
+            AlertSettings,
+            UpdateAlertSettings,
         )
     ),
     tags(
@@ -64,6 +68,7 @@ use super::routes;
         (name = "events",  description = "Analysis event retrieval"),
         (name = "rules",   description = "Per-stream VLM threat assessment rules"),
         (name = "blueprints", description = "Blueprints (floor plan images)"),
+        (name = "alert-phone", description = "Alert phone number (SMS when high risk)"),
         (name = "notifications", description = "Alert / notification testing"),
     )
 )]
