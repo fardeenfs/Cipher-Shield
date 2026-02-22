@@ -3,7 +3,7 @@ use utoipa::OpenApi;
 use crate::storage::models::{
     AnalysisEvent, BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
     CreateRuleRequest, CreateStreamRequest, Stream, StreamRule,
-    UpdateBlueprintRequest, UpdateRuleRequest, UpdateStreamRequest,
+    UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
 };
 use super::routes;
 
@@ -30,6 +30,7 @@ use super::routes;
         routes::stream_live,
         routes::list_events,
         routes::get_event,
+        routes::update_event,
         routes::list_rules,
         routes::create_rule,
         routes::update_rule,
@@ -47,6 +48,7 @@ use super::routes;
             CreateStreamRequest,
             UpdateStreamRequest,
             AnalysisEvent,
+            UpdateEventRequest,
             StreamRule,
             CreateRuleRequest,
             UpdateRuleRequest,

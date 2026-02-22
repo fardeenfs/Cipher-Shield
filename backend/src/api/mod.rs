@@ -44,7 +44,7 @@ pub fn router(state: Arc<AppState>, stream_manager: Arc<StreamManager>) -> Route
         )
         // Events
         .route("/api/events", get(routes::list_events))
-        .route("/api/events/:id", get(routes::get_event))
+        .route("/api/events/:id", get(routes::get_event).put(routes::update_event))
         .route("/api/test-twilio", post(routes::test_twilio_alert))
         // Blueprints and cameras
         .route(

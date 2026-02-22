@@ -78,6 +78,12 @@ pub struct AnalysisEvent {
     pub created_at: DateTime<Utc>,
 }
 
+/// Payload for updating an event (e.g. resolve threat).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateEventRequest {
+    pub status: String,
+}
+
 /// Query filters for listing analysis events.
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct EventQuery {
