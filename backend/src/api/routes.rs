@@ -12,14 +12,17 @@ use futures::StreamExt;
 use tokio_stream::wrappers::BroadcastStream;
 use uuid::Uuid;
 
+use base64::{engine::general_purpose::STANDARD as B64, Engine};
+
 use crate::{
     error::{AppError, Result},
     state::AppState,
     storage::{
         db,
         models::{
-            AnalysisEvent, CreateRuleRequest, CreateStreamRequest, EventQuery, Stream,
-            StreamRule, UpdateRuleRequest, UpdateStreamRequest,
+            BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
+            CreateRuleRequest, CreateStreamRequest, EventQuery, Stream, StreamQuery,
+            UpdateBlueprintRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
     },
     streams::manager::{StreamManager, StreamRecord},
@@ -46,12 +49,16 @@ pub async fn health() -> impl IntoResponse {
     get,
     path = "/api/streams",
     tag = "streams",
+    params(StreamQuery),
     responses(
-        (status = 200, description = "List of all streams", body = Vec<Stream>)
+        (status = 200, description = "List of streams (optionally filter by blueprint_id)", body = Vec<Stream>)
     )
 )]
-pub async fn list_streams(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse> {
-    let streams = db::list_streams(&state.db).await?;
+pub async fn list_streams(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<StreamQuery>,
+) -> Result<impl IntoResponse> {
+    let streams = db::list_streams(&state.db, query.blueprint_id).await?;
     Ok(Json(streams))
 }
 
@@ -85,10 +92,12 @@ pub async fn get_stream(
 )]
 pub async fn create_stream(
     State(state): State<Arc<AppState>>,
-    // stream_manager is injected separately — see router
     axum::extract::Extension(manager): axum::extract::Extension<Arc<StreamManager>>,
     Json(req): Json<CreateStreamRequest>,
 ) -> Result<impl IntoResponse> {
+    if let Some(bid) = req.blueprint_id {
+        let _ = db::get_blueprint(&state.db, bid).await?;
+    }
     let stream = db::create_stream(&state.db, &req).await?;
 
     // Start capture task if enabled
@@ -124,6 +133,9 @@ pub async fn update_stream(
     Path(id): Path<Uuid>,
     Json(req): Json<UpdateStreamRequest>,
 ) -> Result<impl IntoResponse> {
+    if let Some(Some(bid)) = req.blueprint_id {
+        let _ = db::get_blueprint(&state.db, bid).await?;
+    }
     let stream = db::update_stream(&state.db, id, &req).await?;
 
     // Restart capture task to apply new settings
@@ -330,6 +342,152 @@ pub async fn test_twilio_alert() -> impl IntoResponse {
     Json(serde_json::json!({
         "message": "Test alert triggered. Check ALERT_PHONE_NUMBER for SMS (and backend logs if none)."
     }))
+}
+
+// ─── Blueprints ───────────────────────────────────────────────────────────────
+
+#[utoipa::path(
+    get,
+    path = "/api/blueprints",
+    tag = "blueprints",
+    responses(
+        (status = 200, description = "List of blueprints (no image data)", body = Vec<BlueprintSummary>)
+    )
+)]
+pub async fn list_blueprints(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse> {
+    let list = db::list_blueprints(&state.db).await?;
+    Ok(Json(list))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/blueprints/{id}",
+    tag = "blueprints",
+    params(("id" = Uuid, Path, description = "Blueprint ID")),
+    responses(
+        (status = 200, description = "Blueprint with image as base64", body = BlueprintResponse),
+        (status = 404, description = "Blueprint not found")
+    )
+)]
+pub async fn get_blueprint(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse> {
+    let bp = db::get_blueprint(&state.db, id).await?;
+    let image_base64 = bp
+        .image_data
+        .as_ref()
+        .map(|b| B64.encode(b));
+    let resp = BlueprintResponse {
+        id: bp.id,
+        name: bp.name,
+        image_base64,
+        created_at: bp.created_at,
+        updated_at: bp.updated_at,
+    };
+    Ok(Json(resp))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/blueprints",
+    tag = "blueprints",
+    request_body = CreateBlueprintRequest,
+    responses(
+        (status = 201, description = "Blueprint created", body = BlueprintResponse),
+        (status = 400, description = "Invalid request (e.g. invalid base64)")
+    )
+)]
+pub async fn create_blueprint(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<CreateBlueprintRequest>,
+) -> Result<impl IntoResponse> {
+    let name = req.name.unwrap_or_else(|| "Blueprint".into());
+    let image_data = match &req.image_base64 {
+        Some(s) if !s.is_empty() => {
+            let bytes = B64.decode(s.as_bytes())
+                .map_err(|_| AppError::BadRequest("invalid image_base64".into()))?;
+            Some(bytes)
+        }
+        _ => None,
+    };
+    let bp = db::create_blueprint(
+        &state.db,
+        &name,
+        image_data.as_deref(),
+    ).await?;
+    let image_base64 = bp.image_data.as_ref().map(|b| B64.encode(b));
+    let resp = BlueprintResponse {
+        id: bp.id,
+        name: bp.name,
+        image_base64,
+        created_at: bp.created_at,
+        updated_at: bp.updated_at,
+    };
+    Ok((StatusCode::CREATED, Json(resp)))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/blueprints/{id}",
+    tag = "blueprints",
+    params(("id" = Uuid, Path, description = "Blueprint ID")),
+    request_body = UpdateBlueprintRequest,
+    responses(
+        (status = 200, description = "Blueprint updated", body = BlueprintResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 404, description = "Blueprint not found")
+    )
+)]
+pub async fn update_blueprint(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<UpdateBlueprintRequest>,
+) -> Result<impl IntoResponse> {
+    let image_data = match &req.image_base64 {
+        Some(s) if !s.is_empty() => {
+            let bytes = B64.decode(s.as_bytes())
+                .map_err(|_| AppError::BadRequest("invalid image_base64".into()))?;
+            Some(bytes)
+        }
+        Some(_) => None,
+        None => None,
+    };
+    let bp = db::update_blueprint(
+        &state.db,
+        id,
+        req.name.as_deref(),
+        image_data.as_ref().map(|v| v.as_slice()),
+    ).await?;
+    let image_base64 = bp.image_data.as_ref().map(|b| B64.encode(b));
+    let resp = BlueprintResponse {
+        id: bp.id,
+        name: bp.name,
+        image_base64,
+        created_at: bp.created_at,
+        updated_at: bp.updated_at,
+    };
+    Ok(Json(resp))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/blueprints/{id}",
+    tag = "blueprints",
+    params(("id" = Uuid, Path, description = "Blueprint ID")),
+    responses(
+        (status = 204, description = "Blueprint deleted"),
+        (status = 404, description = "Blueprint not found")
+    )
+)]
+pub async fn delete_blueprint(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse> {
+    db::delete_blueprint(&state.db, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // ─── Stream Rules ─────────────────────────────────────────────────────────────

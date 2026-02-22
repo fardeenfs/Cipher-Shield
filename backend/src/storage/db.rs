@@ -6,21 +6,36 @@ use uuid::Uuid;
 use crate::{
     error::{AppError, Result},
     storage::models::{
-        AnalysisEvent, CreateRuleRequest, CreateStreamRequest, EventQuery, Stream,
-        StreamRule, UpdateRuleRequest, UpdateStreamRequest,
+        AnalysisEvent, Blueprint, BlueprintSummary, CreateRuleRequest,
+        CreateStreamRequest, EventQuery, Stream, StreamRule, UpdateRuleRequest,
+        UpdateStreamRequest,
     },
 };
 
 // ─── Streams ──────────────────────────────────────────────────────────────────
 
-pub async fn list_streams(db: &PgPool) -> Result<Vec<Stream>> {
-    let rows = sqlx::query_as!(
-        Stream,
-        r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                  enabled, created_at, updated_at
-           FROM streams
-           ORDER BY created_at ASC"#
-    )
+pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec<Stream>> {
+    let rows = if let Some(bid) = blueprint_id {
+        sqlx::query_as!(
+            Stream,
+            r#"SELECT id, name, source_type, source_url, capture_interval_sec,
+                      enabled, position_x, position_y, rotation, phone_number,
+                      blueprint_id, created_at, updated_at
+               FROM streams
+               WHERE blueprint_id = $1
+               ORDER BY created_at ASC"#,
+            bid
+        )
+    } else {
+        sqlx::query_as!(
+            Stream,
+            r#"SELECT id, name, source_type, source_url, capture_interval_sec,
+                      enabled, position_x, position_y, rotation, phone_number,
+                      blueprint_id, created_at, updated_at
+               FROM streams
+               ORDER BY created_at ASC"#
+        )
+    }
     .fetch_all(db)
     .await?;
     Ok(rows)
@@ -30,7 +45,8 @@ pub async fn get_stream(db: &PgPool, id: Uuid) -> Result<Stream> {
     sqlx::query_as!(
         Stream,
         r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                  enabled, created_at, updated_at
+                  enabled, position_x, position_y, rotation, phone_number,
+                  blueprint_id, created_at, updated_at
            FROM streams WHERE id = $1"#,
         id
     )
@@ -42,15 +58,17 @@ pub async fn get_stream(db: &PgPool, id: Uuid) -> Result<Stream> {
 pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Stream> {
     let row = sqlx::query_as!(
         Stream,
-        r#"INSERT INTO streams (name, source_type, source_url, capture_interval_sec, enabled)
-           VALUES ($1, $2, $3, $4, $5)
+        r#"INSERT INTO streams (name, source_type, source_url, capture_interval_sec, enabled, blueprint_id)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, created_at, updated_at"#,
+                     enabled, position_x, position_y, rotation, phone_number,
+                     blueprint_id, created_at, updated_at"#,
         req.name,
         req.source_type,
         req.source_url,
         req.capture_interval_sec,
         req.enabled,
+        req.blueprint_id,
     )
     .fetch_one(db)
     .await?;
@@ -58,8 +76,11 @@ pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Str
 }
 
 pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> Result<Stream> {
-    // Fetch current values and apply patches
     let current = get_stream(db, id).await?;
+    let blueprint_id = match req.blueprint_id {
+        None => current.blueprint_id,
+        Some(opt) => opt,
+    };
 
     let row = sqlx::query_as!(
         Stream,
@@ -69,16 +90,31 @@ pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> 
                source_url           = $4,
                capture_interval_sec = $5,
                enabled              = $6,
+               position_x           = $7,
+               position_y           = $8,
+               rotation             = $9,
+               phone_number         = $10,
+               blueprint_id         = $11,
                updated_at           = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, created_at, updated_at"#,
+                     enabled, position_x, position_y, rotation, phone_number,
+                     blueprint_id, created_at, updated_at"#,
         id,
         req.name.as_deref().unwrap_or(&current.name),
         req.source_type.as_deref().unwrap_or(&current.source_type),
         req.source_url.as_deref().unwrap_or(&current.source_url),
         req.capture_interval_sec.unwrap_or(current.capture_interval_sec),
         req.enabled.unwrap_or(current.enabled),
+        req.position_x.unwrap_or(current.position_x),
+        req.position_y.unwrap_or(current.position_y),
+        req.rotation.unwrap_or(current.rotation),
+        match &req.phone_number {
+            None => current.phone_number.clone(),
+            Some(s) if s.is_empty() => None,
+            Some(s) => Some(s.clone()),
+        },
+        blueprint_id,
     )
     .fetch_one(db)
     .await?;
@@ -104,7 +140,8 @@ pub async fn set_stream_enabled(db: &PgPool, id: Uuid, enabled: bool) -> Result<
         r#"UPDATE streams SET enabled = $2, updated_at = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
-                     enabled, created_at, updated_at"#,
+                     enabled, position_x, position_y, rotation, phone_number,
+                     blueprint_id, created_at, updated_at"#,
         id,
         enabled,
     )
@@ -278,6 +315,82 @@ pub async fn delete_rule(db: &PgPool, rule_id: Uuid, stream_id: Uuid) -> Result<
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound(format!("Rule {rule_id} not found")));
+    }
+    Ok(())
+}
+
+// ─── Blueprints ──────────────────────────────────────────────────────────────
+
+pub async fn list_blueprints(db: &PgPool) -> Result<Vec<BlueprintSummary>> {
+    let rows = sqlx::query_as!(
+        BlueprintSummary,
+        r#"SELECT id, name, created_at, updated_at FROM blueprints ORDER BY created_at ASC"#
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn get_blueprint(db: &PgPool, id: Uuid) -> Result<Blueprint> {
+    sqlx::query_as!(
+        Blueprint,
+        r#"SELECT id, name, image_data, created_at, updated_at FROM blueprints WHERE id = $1"#,
+        id
+    )
+    .fetch_optional(db)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Blueprint {id} not found")))
+}
+
+pub async fn create_blueprint(
+    db: &PgPool,
+    name: &str,
+    image_data: Option<&[u8]>,
+) -> Result<Blueprint> {
+    let row = sqlx::query_as!(
+        Blueprint,
+        r#"INSERT INTO blueprints (name, image_data) VALUES ($1, $2)
+           RETURNING id, name, image_data, created_at, updated_at"#,
+        name,
+        image_data,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn update_blueprint(
+    db: &PgPool,
+    id: Uuid,
+    name: Option<&str>,
+    image_data: Option<&[u8]>,
+) -> Result<Blueprint> {
+    let current = get_blueprint(db, id).await?;
+    let name = name.unwrap_or(&current.name);
+    let image_data = match image_data {
+        Some(b) => Some(b),
+        None => current.image_data.as_deref(),
+    };
+    let row = sqlx::query_as!(
+        Blueprint,
+        r#"UPDATE blueprints SET name = $2, image_data = $3, updated_at = NOW()
+           WHERE id = $1 RETURNING id, name, image_data, created_at, updated_at"#,
+        id,
+        name,
+        image_data,
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(row)
+}
+
+pub async fn delete_blueprint(db: &PgPool, id: Uuid) -> Result<()> {
+    let result: sqlx::postgres::PgQueryResult =
+        sqlx::query!("DELETE FROM blueprints WHERE id = $1", id)
+            .execute(db)
+            .await?;
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound(format!("Blueprint {id} not found")));
     }
     Ok(())
 }
