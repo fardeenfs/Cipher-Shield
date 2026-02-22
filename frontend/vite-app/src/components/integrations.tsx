@@ -22,13 +22,12 @@ export function Integrations() {
 			<div className="p-4 md:p-6">
 				<div className="space-y-4">
 					<h2 className="font-medium text-3xl text-foreground tracking-tight sm:text-4xl">
-						Connect with your favorite tools
+						Powered by local intelligence
 					</h2>
 					<p className="text-muted-foreground text-sm md:text-base">
-						Connect your favorite tools with our growing library of
-						integrations.
+						ThreatLens leverages cutting-edge open-source tools to ensure complete data sovereignty and zero data leakage.
 					</p>
-					<Button size="sm">Explore integrations</Button>
+					<Button size="sm">View Architecture</Button>
 				</div>
 			</div>
 

@@ -20,7 +20,7 @@ export function Footer() {
 							<Logo />
 						</a>
 						<p className="max-w-sm text-balance text-muted-foreground text-sm">
-							Beautify your app with ThreatLens.
+							Open-source, local-first spatial surveillance. Map cameras, set custom AI logic rules, and monitor events with zero data leakage.
 						</p>
 						<div className="flex gap-2">
 							{socialLinks.map((item, index) => (
@@ -52,7 +52,7 @@ export function Footer() {
 						</div>
 					</div>
 					<div className="col-span-3 w-full md:col-span-1">
-						<span className="text-muted-foreground text-xs">Company</span>
+						<span className="text-muted-foreground text-xs">Project</span>
 						<div className="mt-2 flex flex-col gap-2">
 							{company.map(({ href, title }) => (
 								<a
@@ -79,15 +79,7 @@ export function Footer() {
 
 const company = [
 	{
-		title: "About Us",
-		href: "#",
-	},
-	{
-		title: "Careers",
-		href: "#",
-	},
-	{
-		title: "Brand assets",
+		title: "About",
 		href: "#",
 	},
 	{
@@ -102,23 +94,15 @@ const company = [
 
 const resources = [
 	{
-		title: "Blog",
+		title: "Docs",
 		href: "#",
 	},
 	{
-		title: "Help Center",
+		title: "GitHub",
 		href: "#",
 	},
 	{
-		title: "Contact Support",
-		href: "#",
-	},
-	{
-		title: "Community",
-		href: "#",
-	},
-	{
-		title: "Security",
+		title: "Discord",
 		href: "#",
 	},
 ];

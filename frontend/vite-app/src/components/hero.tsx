@@ -4,7 +4,7 @@ import { FullWidthDivider } from "@/components/ui/full-width-divider";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight02Icon, Call02Icon } from "@hugeicons/core-free-icons";
-import { Dithering, GrainGradient, MeshGradient,  } from '@paper-design/shaders-react';
+import { Dithering } from '@paper-design/shaders-react';
 
 
 export function HeroSection() {
@@ -47,10 +47,10 @@ export function HeroSection() {
 					href="#link"
 				>
 					<div className="rounded-xs border bg-card px-1.5 py-0.5 shadow-sm">
-						<p className="font-mono text-xs">NOW</p>
+						<p className="font-mono text-xs">V1.0</p>
 					</div>
 
-					<span className="text-xs">accepting new client projects</span>
+					<span className="text-xs">now running locally</span>
 					<span className="block h-5 border-l" />
 
 					<div className="pr-1">
@@ -64,7 +64,7 @@ export function HeroSection() {
 						"fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-100 duration-500 ease-out"
 					)}
 				>
-					Building Digital Experiences That Drive Growth
+					AI Powered Spatial Surveillance
 				</h1>
 
 				<p
@@ -73,17 +73,16 @@ export function HeroSection() {
 						"fade-in slide-in-from-bottom-10 animate-in fill-mode-backwards delay-200 duration-500 ease-out"
 					)}
 				>
-					We help brands scale faster through design, <br /> development and
-					strategic execution.
+					Map live feeds to blueprints, define custom natural language rules, <br /> and detect security violations with zero data leakage.
 				</p>
 
 				<div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in items-center justify-center gap-3 fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
 					<Button variant="outline">
 						<HugeiconsIcon icon={Call02Icon} strokeWidth={2} data-icon="inline-start" />{" "}
-						Book a Call
+						Documentation
 					</Button>
 					<Button>
-						Get started{" "}
+						Open Dashboard{" "}
 						<HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} data-icon="inline-end" />
 					</Button>
 				</div>

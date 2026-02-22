@@ -14,7 +14,7 @@ export function FeatureSection() {
 	return (
 		<div className="mx-auto max-w-5xl">
 			<h2 className="mb-5 text-center font-medium text-2xl md:text-3xl">
-				Ensuring your speedy workflow
+				Comprehensive Threat Detection
 			</h2>
 
 			<div className="relative">
@@ -72,24 +72,24 @@ function DashedLine({ className, ...props }: React.ComponentProps<"div">) {
 
 const features: FeatureType[] = [
 	{
-		title: "Auto-Save Everything",
+		title: "100% Local & Private",
 		icon: (
 			<HugeiconsIcon icon={Time01Icon} strokeWidth={2} />
 		),
-		description: "Write without worry, every time.",
+		description: "Powered by Ollama, zero data leaves your local machine.",
 	},
 	{
-		title: "Drag-and-Drop Blocks",
+		title: "Spatial Mapping",
 		icon: (
 			<HugeiconsIcon icon={SquareDashed} strokeWidth={2} />
 		),
-		description: "Rearrange sections with the block editor.",
+		description: "Upload blueprints, drop cameras, and simulate blind spots.",
 	},
 	{
-		title: "Keyboard Shortcuts",
+		title: "AI Logic Rules",
 		icon: (
 			<HugeiconsIcon icon={CommandIcon} strokeWidth={2} />
 		),
-		description: "Speed up your workflow with quick keys.",
+		description: "Detect anomalies using custom natural language detection.",
 	},
 ];
