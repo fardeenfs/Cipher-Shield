@@ -4,6 +4,25 @@ use serde_json::Value;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
+/// Deserializes an optional-nullable UUID field.
+/// - Field absent     → `None`            (leave unchanged)
+/// - Field `null`     → `Some(None)`      (unlink / clear)
+/// - Field `""`       → `Some(None)`      (empty string treated as unlink)
+/// - Field `"<uuid>"` → `Some(Some(uuid))` (link to this blueprint)
+fn deser_nullable_uuid<'de, D>(d: D) -> Result<Option<Option<Uuid>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(d)?;
+    match s {
+        None => Ok(Some(None)),
+        Some(ref v) if v.trim().is_empty() => Ok(Some(None)),
+        Some(v) => Uuid::parse_str(&v)
+            .map(|u| Some(Some(u)))
+            .map_err(serde::de::Error::custom),
+    }
+}
+
 /// Mirrors the `streams` table. Stream = camera; belongs to at most one blueprint (blueprint_id).
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct Stream {
@@ -56,7 +75,8 @@ pub struct UpdateStreamRequest {
     pub position_x: Option<f64>,
     pub position_y: Option<f64>,
     pub rotation: Option<f64>,
-    /// Set to null in JSON to unbind from blueprint; omit to leave unchanged.
+    /// Set to null or "" in JSON to unbind from blueprint; omit to leave unchanged.
+    #[serde(default, deserialize_with = "deser_nullable_uuid")]
     pub blueprint_id: Option<Option<Uuid>>,
 }
 
