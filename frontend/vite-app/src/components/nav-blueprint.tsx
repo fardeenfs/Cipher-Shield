@@ -34,7 +34,7 @@ import { Badge } from "./ui/badge";
 import { Link } from "@tanstack/react-router";
 import { useQueryState } from "nuqs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { blueprintsQueries, blueprintsMutations } from "@/lib/queries";
+import { blueprintsQueries, blueprintsMutations, streamsQueries } from "@/lib/queries";
 import type { BlueprintSummary } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import {
@@ -56,6 +56,8 @@ export function NavBlueprint() {
   const { isMobile } = useSidebar();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBlueprint, setSelectedBlueprint] = useQueryState("blueprint");
+  const [selectedCameraId, setSelectedCamera] = useQueryState("camera");
+  const { data: streams = [] } = useQuery(streamsQueries.list());
 
   const deleteBlueprintMutation = useMutation(blueprintsMutations.delete(queryClient));
   
@@ -112,7 +114,15 @@ export function NavBlueprint() {
               deleteMutation={deleteBlueprintMutation}
               isMobile={isMobile}
               isSelected={selectedBlueprint === blueprint.id || (!selectedBlueprint && blueprint.id === filteredBlueprints[0]?.id)}
-              onSelect={() => setSelectedBlueprint(blueprint.id)}
+              onSelect={() => {
+                setSelectedBlueprint(blueprint.id);
+                if (selectedCameraId) {
+                  const camera = streams.find(s => s.id === selectedCameraId);
+                  if (camera && camera.blueprint_id !== blueprint.id) {
+                    setSelectedCamera(null);
+                  }
+                }
+              }}
             />
           ))}
         </SidebarMenu>
