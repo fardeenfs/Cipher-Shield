@@ -38,21 +38,25 @@ import { format } from "date-fns";
 
 
 export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {events:AnalysisEvent[] | undefined, activeEvents:AnalysisEvent[], resolvedEvents:AnalysisEvent[]}) {
+    const validEvents = events?.filter(e => e.risk_level?.toLowerCase() !== 'none') || [];
+    const validActive = activeEvents.filter(e => e.risk_level?.toLowerCase() !== 'none');
+    const validResolved = resolvedEvents.filter(e => e.risk_level?.toLowerCase() !== 'none');
+
     return (
-               <Card size="sm">
+        <Card size="sm">
           <CardHeader className="p-5 pb-6">
             <CardTitle className="flex items-center gap-3">
               <div className="size-2.5 bg-destructive shadow-[0_0_5px_var(--destructive)]" />
               All Alerts
-              <Badge variant="outline" className="ml-auto">{events?.length || 0}</Badge>
+              <Badge variant="outline" className="ml-auto">{validEvents.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <SidebarGroup className="px-0 pt-0">
               <Tabs defaultValue="active" className="w-full">
                   <TabsList className="w-full grid grid-cols-2">
-                    <TabsTrigger value="active">Active ({activeEvents.length})</TabsTrigger>
-                    <TabsTrigger value="resolved">Resolved ({resolvedEvents.length})</TabsTrigger>
+                    <TabsTrigger value="active">Active ({validActive.length})</TabsTrigger>
+                    <TabsTrigger value="resolved">Resolved ({validResolved.length})</TabsTrigger>
                   </TabsList>
 
                 <SidebarGroupContent>
@@ -60,17 +64,17 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
                     <ScrollBlur className="max-h-[calc(100vh-270px)]">
                       <div className="relative w-full mt-4">
                         <div className="flex flex-col">
-                          {activeEvents.length === 0 && (
+                          {validActive.length === 0 && (
                             <div className="pb-4 text-center text-xs text-muted-foreground">
                               No active events found.
                             </div>
                           )}
-                          {activeEvents.map((event, index) => (
+                          {validActive.map((event, index) => (
                             <TimelineItem
                               key={event.id}
                               entry={mapEventToEntry(event)}
                               index={index}
-                              isLast={index === activeEvents.length - 1}
+                              isLast={index === validActive.length - 1}
                             />
                           ))}
                         </div>
@@ -82,17 +86,17 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
                     <ScrollBlur className="max-h-[calc(100vh-270px)]">
                       <div className="relative w-full mt-4">
                         <div className="flex flex-col">
-                          {resolvedEvents.length === 0 && (
+                          {validResolved.length === 0 && (
                             <div className="pb-4 text-center text-xs text-muted-foreground">
                               No resolved events found.
                             </div>
                           )}
-                          {resolvedEvents.map((event, index) => (
+                          {validResolved.map((event, index) => (
                             <TimelineItem
                               key={event.id}
                               entry={mapEventToEntry(event)}
                               index={index}
-                              isLast={index === resolvedEvents.length - 1}
+                              isLast={index === validResolved.length - 1}
                               hideResolve // Do not show resolve button on already resolved events
                             />
                           ))}
