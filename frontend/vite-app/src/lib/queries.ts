@@ -60,6 +60,17 @@ export const eventsQueries = {
     }),
 };
 
+export const eventsMutations = {
+  update: (queryClient: QueryClient) =>
+    mutationOptions({
+      mutationFn: api.updateEvent,
+      onSuccess: (data, variables) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
+        queryClient.setQueryData(queryKeys.events.detail(variables.id), data);
+      },
+    }),
+};
+
 export const streamsQueries = {
   list: (blueprint_id?: string) =>
     queryOptions({

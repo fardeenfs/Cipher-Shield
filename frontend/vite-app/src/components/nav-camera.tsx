@@ -1,22 +1,18 @@
 import { useState, useMemo } from "react";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   MoreHorizontalCircle01Icon,
-  StarOffIcon,
-  LinkIcon,
-  ArrowUpRightIcon,
   Delete02Icon,
   Search,
   Edit,
-  DisabilityFreeIcons,
   PauseIcon,
   PlayIcon,
 } from "@hugeicons/core-free-icons";
@@ -92,27 +88,34 @@ export function NavCamera() {
   }, [cameras, searchQuery]);
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel className="flex justify-between items-center">
-        Available Cameras
-        <Badge variant="outline">{filteredCameras.length}</Badge>
-      </SidebarGroupLabel>
-      <div className="relative my-2">
-        <HugeiconsIcon
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-          icon={Search}
-          strokeWidth={2}
-        />
-        <Input 
-          type="search" 
-          placeholder="Search..." 
-          className="pl-9" 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-      <ScrollBlur className="max-h-100">
-        <SidebarMenu className="space-y-2">
+    <Card size="sm" className="group-data-[collapsible=icon]:hidden">
+      <CardHeader className="p-5 pb-6">
+        <CardTitle className="flex items-center gap-3">
+          <div className="size-2.5 bg-primary shadow-[0_0_5px_var(--primary)]" />
+          Available Cameras
+          <Badge variant="outline" className="ml-auto">{filteredCameras.length}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0 pb-4">
+        <div className="relative mb-4 px-4">
+          <div className="relative">
+            <HugeiconsIcon
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              icon={Search}
+              strokeWidth={2}
+            />
+            <Input 
+              type="search" 
+              placeholder="Search..." 
+              className="pl-9 w-full" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        <SidebarGroup className="px-0 py-0">
+          <ScrollBlur className="max-h-100">
+            <SidebarMenu className="space-y-2 px-4">
           {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading streams...</div>}
           {!isLoading && filteredCameras.length === 0 && (
              <div className="p-4 text-center text-xs text-muted-foreground">No cameras match your search.</div>
@@ -248,5 +251,7 @@ export function NavCamera() {
         </SidebarMenu>
       </ScrollBlur>
     </SidebarGroup>
+    </CardContent>
+    </Card>
   );
 }
