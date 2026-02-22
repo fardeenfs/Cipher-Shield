@@ -52,10 +52,11 @@ export function Header() {
 							</Button>
 						))}
 					</div>
-					<Button size="sm" variant="outline">
-						Sign In
+					
+					<Button size="sm" >
+
+						<a href="/">Get Started</a>	
 					</Button>
-					<Button size="sm">Get Started</Button>
 				</div>
 				<MobileNav />
 			</nav>

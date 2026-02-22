@@ -27,7 +27,9 @@ export function Integrations() {
 					<p className="text-muted-foreground text-sm md:text-base">
 						ThreatLens leverages cutting-edge open-source tools to ensure complete data sovereignty and zero data leakage.
 					</p>
-					<Button size="sm">View Architecture</Button>
+					<Button size="sm">
+						<a href="https://github.com/fardeenfs/ClaudeVibers_ThreatLens">View Architecture</a>
+					</Button>
 				</div>
 			</div>
 

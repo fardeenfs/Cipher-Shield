@@ -79,11 +79,13 @@ export function HeroSection() {
 				<div className="fade-in slide-in-from-bottom-10 flex w-fit animate-in items-center justify-center gap-3 fill-mode-backwards pt-2 delay-300 duration-500 ease-out">
 					<Button variant="outline">
 						<HugeiconsIcon icon={Call02Icon} strokeWidth={2} data-icon="inline-start" />{" "}
-						Documentation
+						
+						<a href="https://github.com/fardeenfs/ClaudeVibers_ThreatLens">Documentation</a>							
+
 					</Button>
 					<Button>
-						Open Dashboard{" "}
-						<HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} data-icon="inline-end" />
+<a href="/">Open Dashboard</a>							
+<HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} data-icon="inline-end" />
 					</Button>
 				</div>
 			</div>
