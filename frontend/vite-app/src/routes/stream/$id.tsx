@@ -36,28 +36,6 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col h-full bg-muted/40 overflow-hidden">
-      <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b">
-        <div className="flex flex-1 items-center gap-2 px-3">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mr-2 h-14" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/">Cameras</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>
-                  {isLoading ? "Loading..." : stream ? stream.name : "Unknown Stream"}
-                </BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
-
       <main className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center relative">
         {isLoading && <div className="text-muted-foreground animate-pulse">Loading stream details...</div>}
         
@@ -70,14 +48,9 @@ function RouteComponent() {
         {!isLoading && !isError && stream && (
           <div className="flex flex-col items-center">
             {/* Blueprint Node / Card View */}
-            <Card className="w-[480px] sm:w-[560px] md:w-[640px] max-w-full shadow-lg overflow-hidden transition-all hover:shadow-xl rounded-xl">
+            <Card className="w-[480px] sm:w-[560px] md:w-[940px] max-w-full shadow-lg overflow-hidden transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center gap-3 bg-muted/20 border-b p-4 space-y-0">
-                <div className={cn("p-2 rounded-lg border", stream.enabled ? "bg-primary/10 border-primary/20" : "bg-destructive/10 border-destructive/20")}>
-                  <HugeiconsIcon 
-                    icon={VideoIcon} 
-                    className={cn("h-5 w-5", stream.enabled ? "text-primary" : "text-destructive")} 
-                  />
-                </div>
+               
                 <div className="flex-1">
                   <CardTitle className="text-lg leading-none mb-1">{stream.name}</CardTitle>
                   <CardDescription className="text-xs line-clamp-1">
@@ -87,8 +60,8 @@ function RouteComponent() {
                 {/* Status Indicator */}
                 <Badge variant="outline" className="flex items-center gap-2 font-medium bg-background px-3 py-1 text-xs">
                   <span className="relative flex h-2 w-2">
-                    <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-60", stream.enabled ? "bg-primary" : "bg-destructive")}></span>
-                    <span className={cn("relative inline-flex rounded-full h-2 w-2", stream.enabled ? "bg-primary shadow-[0_0_8px_var(--color-primary)]" : "bg-destructive shadow-[0_0_8px_var(--color-destructive)]")}></span>
+                    <span className={cn("animate-ping absolute inline-flex h-full w-full  opacity-60", stream.enabled ? "bg-primary" : "bg-destructive")}></span>
+                    <span className={cn("relative inline-flex  h-2 w-2", stream.enabled ? "bg-primary shadow-[0_0_8px_var(--color-primary)]" : "bg-destructive shadow-[0_0_8px_var(--color-destructive)]")}></span>
                   </span>
                   {stream.enabled ? "Active" : "Offline"}
                 </Badge>

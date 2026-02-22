@@ -1,25 +1,14 @@
 import { memo } from "react";
-import {
-  useNodes,
-  useNodesData,
-  type Node,
-  type NodeProps,
-} from "@xyflow/react";
+import { useNodes } from "@xyflow/react";
 import { BOUNDS } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { blueprintsQueries } from "@/lib/queries";
 import { useQueryState } from "nuqs";
 
-type ImageNodeDATA = {
-  label: string;
-  showBlindSpot: boolean;
-};
-type ImgNode = Node<ImageNodeDATA, "camera">;
-
-const ImageNode = ({ id }: NodeProps<ImgNode>) => {
+const ImageNode = () => {
   const nodes = useNodes();
-  const nodeData = useNodesData<ImgNode>(id);
-  const showBlindSpot = nodeData?.data?.showBlindSpot ?? true;
+  const [blueprintMode] = useQueryState("blueprintMode");
+  const showBlindSpot = blueprintMode === "off";
 
   const { data: blueprintsList } = useQuery(blueprintsQueries.list());
   const latestBlueprintId = blueprintsList

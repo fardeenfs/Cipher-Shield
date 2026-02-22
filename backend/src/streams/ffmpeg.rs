@@ -47,9 +47,22 @@ pub struct FfmpegCapturer {
 impl FfmpegCapturer {
     pub async fn run(self, tx: mpsc::Sender<CapturedFrame>) {
         loop {
+            // For Mock sources, resolve the effective URL (yt-dlp for web, passthrough for local).
+            let effective_url = if self.source_type == SourceType::Mock {
+                match resolve_mock_url(&self.stream_name, &self.source_url).await {
+                    Some(u) => u,
+                    None => {
+                        sleep(Duration::from_secs(10)).await;
+                        continue;
+                    }
+                }
+            } else {
+                self.source_url.clone()
+            };
+
             info!(stream = %self.stream_name, "Starting ffmpeg capture process");
 
-            let mut cmd = self.build_command();
+            let mut cmd = self.build_command(&effective_url);
             let child = match cmd.spawn() {
                 Ok(c) => c,
                 Err(e) => {
@@ -78,7 +91,8 @@ impl FfmpegCapturer {
         }
     }
 
-    fn build_command(&self) -> Command {
+    /// `url` is the effective source URL (already resolved for Mock/YouTube sources).
+    fn build_command(&self, url: &str) -> Command {
         let mut cmd = Command::new("ffmpeg");
         cmd.stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::inherit())
@@ -92,7 +106,7 @@ impl FfmpegCapturer {
             SourceType::Rtsp => {
                 cmd.args([
                     "-rtsp_transport", "tcp",
-                    "-i", &self.source_url,
+                    "-i", url,
                     "-vf", &format!("fps={LIVE_FPS}"),
                     "-strict", "unofficial",
                     "-f", "image2pipe",
@@ -102,7 +116,7 @@ impl FfmpegCapturer {
             }
             SourceType::Mjpeg => {
                 cmd.args([
-                    "-i", &self.source_url,
+                    "-i", url,
                     "-vf", &format!("fps={LIVE_FPS}"),
                     "-strict", "unofficial",
                     "-f", "image2pipe",
@@ -117,7 +131,7 @@ impl FfmpegCapturer {
                     // Large ring buffer to handle cameras that capture faster than
                     // our output rate (fixes "rtbufsize too full" warnings).
                     "-rtbufsize", "100M",
-                    "-i", &format!("video={}", self.source_url),
+                    "-i", &format!("video={}", url),
                     // Throttle output to LIVE_FPS on the output side so we don't
                     // force the camera into a specific capture rate (avoids
                     // "Could not set video options" on cameras that don't support
@@ -132,7 +146,7 @@ impl FfmpegCapturer {
                 #[cfg(target_os = "linux")]
                 cmd.args([
                     "-f", "v4l2",
-                    "-i", &self.source_url,
+                    "-i", url,
                     "-vf", &format!("fps={LIVE_FPS}"),
                     "-strict", "unofficial",
                     "-f", "image2pipe",
@@ -143,13 +157,43 @@ impl FfmpegCapturer {
                 #[cfg(target_os = "macos")]
                 cmd.args([
                     "-f", "avfoundation",
-                    "-i", &self.source_url,
+                    "-i", url,
                     "-vf", &format!("fps={LIVE_FPS}"),
                     "-strict", "unofficial",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "pipe:1",
                 ]);
+            }
+            SourceType::Mock => {
+                let is_web = url.starts_with("http://") || url.starts_with("https://");
+                if is_web {
+                    // Web URL resolved by yt-dlp: play once at native speed; the
+                    // run() loop will re-resolve and restart when it finishes.
+                    cmd.args([
+                        "-re",
+                        "-i", url,
+                        "-vf", &format!("fps={LIVE_FPS}"),
+                        "-strict", "unofficial",
+                        "-f", "image2pipe",
+                        "-vcodec", "mjpeg",
+                        "pipe:1",
+                    ]);
+                } else {
+                    // Local file: loop indefinitely with -stream_loop -1.
+                    // -re reads at native frame rate so we don't flood the queue.
+                    // -stream_loop must come before -i.
+                    cmd.args([
+                        "-re",
+                        "-stream_loop", "-1",
+                        "-i", url,
+                        "-vf", &format!("fps={LIVE_FPS}"),
+                        "-strict", "unofficial",
+                        "-f", "image2pipe",
+                        "-vcodec", "mjpeg",
+                        "pipe:1",
+                    ]);
+                }
             }
             SourceType::Snapshot => {
                 // Should not reach here; use SnapshotCapturer instead.
@@ -224,6 +268,58 @@ impl FfmpegCapturer {
         }
 
         anyhow::bail!("ffmpeg stdout closed");
+    }
+}
+
+// ─── Mock source helpers ──────────────────────────────────────────────────────
+
+/// Resolves the effective URL for a Mock source:
+/// - Local file path → returned as-is.
+/// - Web URL (http/https) → calls `yt-dlp -g` to get the direct CDN URL.
+///
+/// Returns `None` on failure (already logged); the caller should back off and retry.
+async fn resolve_mock_url(stream_name: &str, source_url: &str) -> Option<String> {
+    if !source_url.starts_with("http://") && !source_url.starts_with("https://") {
+        // Local file — use directly.
+        return Some(source_url.to_string());
+    }
+
+    // Web / YouTube URL — resolve to a direct streamable URL via yt-dlp.
+    info!(stream = %stream_name, url = %source_url, "Resolving mock URL via yt-dlp");
+    match tokio::process::Command::new("yt-dlp")
+        .args([
+            "-g",                     // print direct URL, do not download
+            "--no-playlist",          // single video only
+            "-f", "best[ext=mp4]/best", // prefer mp4 for broadest ffmpeg support
+            source_url,
+        ])
+        .output()
+        .await
+    {
+        Ok(out) if out.status.success() => {
+            let resolved = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if resolved.is_empty() {
+                error!(stream = %stream_name, "yt-dlp returned an empty URL");
+                None
+            } else {
+                info!(stream = %stream_name, "yt-dlp resolved URL successfully");
+                Some(resolved)
+            }
+        }
+        Ok(out) => {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            error!(
+                stream = %stream_name,
+                "yt-dlp failed (status {}): {}",
+                out.status,
+                stderr.chars().take(200).collect::<String>()
+            );
+            None
+        }
+        Err(e) => {
+            error!(stream = %stream_name, "Failed to spawn yt-dlp: {e}. Is yt-dlp on PATH?");
+            None
+        }
     }
 }
 

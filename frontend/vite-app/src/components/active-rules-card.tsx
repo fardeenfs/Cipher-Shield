@@ -134,10 +134,7 @@ export function ActiveRulesCard({ streamId, streamName, rules, isMobile }: Activ
                           <HugeiconsIcon icon={Edit} strokeWidth={2} className="text-muted-foreground" />
                           <span>Edit</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem disabled>
-                          <HugeiconsIcon icon={PauseIcon} strokeWidth={2} className="text-muted-foreground" />
-                          <span>Disable</span>
-                        </DropdownMenuItem>
+                     
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleDeleteClick(rule.id)}>
                           <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} className="text-destructive" />

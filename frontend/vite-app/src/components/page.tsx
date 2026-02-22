@@ -15,24 +15,32 @@ import {
   ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { streamsQueries, streamsMutations } from "@/lib/queries";
+import { streamsQueries, streamsMutations, blueprintsQueries } from "@/lib/queries";
+import { useQueryState } from "nuqs";
+import { cn } from "@/lib/utils";
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import GridLoader from "./grid-loader";
 import ImageNode from "./image-node";
 import CameraNode from "./camera-node";
 import { BOUNDS } from "@/lib/constants";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Alert01Icon } from "@hugeicons/core-free-icons";
+import { Alert01Icon, VideoCameraAiIcon } from "@hugeicons/core-free-icons";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 const nodeTypes = {
   imageNode: ImageNode,
   cameraNode: CameraNode,
@@ -67,9 +75,20 @@ const FlowEditor = React.memo(() => {
   const { fitView, screenToFlowPosition } = useReactFlow();
   const queryClient = useQueryClient();
   const updateStreamMutation = useMutation(streamsMutations.update(queryClient));
-  const { data: streams } = useQuery(streamsQueries.list());
   
-  const [nodesInitialized, setNodesInitialized] = useState(false);
+  const { data: blueprintsList } = useQuery(blueprintsQueries.list());
+  const latestBlueprintId = blueprintsList
+    ?.slice()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())?.[0]?.id;
+
+  const [selectedBlueprintId] = useQueryState("blueprint");
+  const targetBlueprintId = selectedBlueprintId || latestBlueprintId;
+
+  const { data: streams } = useQuery(
+    streamsQueries.list()
+  );
+  const [selectedCameraId, setSelectedCamera] = useQueryState("camera");
+  
   const [duplicateAlert, setDuplicateAlert] = useState<string | null>(null);
   const alertTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -82,12 +101,13 @@ const FlowEditor = React.memo(() => {
     return () => window.removeEventListener("resize", handleResize);
   }, [fitView]);
 
+
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
   useEffect(() => {
-    if (streams && !nodesInitialized) {
-      const placedStreams = streams.filter(s => Math.abs(s.position_x) > 0.01 || Math.abs(s.position_y) > 0.01);
+    if (streams && targetBlueprintId) {
+      const placedStreams = streams.filter(s => (Math.abs(s.position_x) > 0.01 || Math.abs(s.position_y) > 0.01) && s.blueprint_id === targetBlueprintId);
       const camNodes: Node[] = placedStreams.map(s => ({
         id: String(s.id),
         type: "cameraNode",
@@ -95,12 +115,17 @@ const FlowEditor = React.memo(() => {
         data: {
           label: s.name,
           rotation: s.rotation || 0,
+          isSelected: s.id === selectedCameraId,
         },
       }));
       setNodes([...initialNodes, ...camNodes]);
-      setNodesInitialized(true);
+
+      // Delay fitView slightly so ReactFlow has time to render the new nodes
+      requestAnimationFrame(() => {
+        setTimeout(() => fitView({ duration: 400, padding: 0.1 }), 25);
+      });
     }
-  }, [streams, nodesInitialized]);
+  }, [streams, targetBlueprintId, selectedCameraId, fitView]);
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
@@ -146,6 +171,7 @@ const FlowEditor = React.memo(() => {
         data: {
           label: cameraData.name,
           rotation: cameraData.rotation || 0,
+          isSelected: String(cameraData.id) === selectedCameraId,
         },
       };
 
@@ -156,10 +182,11 @@ const FlowEditor = React.memo(() => {
         payload: {
           position_x: position.x,
           position_y: position.y,
+          blueprint_id: targetBlueprintId || null,
         }
       });
     },
-    [screenToFlowPosition, nodes, updateStreamMutation],
+    [screenToFlowPosition, nodes, updateStreamMutation, targetBlueprintId],
   );
 
   const onNodeDragStop = useCallback(
@@ -187,8 +214,8 @@ const FlowEditor = React.memo(() => {
         return {
           ...change,
           position: {
-            x: Math.max(0, Math.min(x, BOUNDS.width - 50)),
-            y: Math.max(0, Math.min(y, BOUNDS.height - 40)),
+            x: Math.max(0, Math.min(x, BOUNDS.width)),
+            y: Math.max(0, Math.min(y, BOUNDS.height)),
           },
         };
       }
@@ -197,6 +224,15 @@ const FlowEditor = React.memo(() => {
 
     setNodes((nds) => applyNodeChanges(nextChanges, nds));
   }, []);
+
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (node.type === "cameraNode") {
+        setSelectedCamera(node.id);
+      }
+    },
+    [setSelectedCamera]
+  );
 
   return (
     <div
@@ -211,6 +247,7 @@ const FlowEditor = React.memo(() => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
+        onNodeClick={onNodeClick}
         colorMode="dark"
         autoPanOnNodeDrag={false}
         onConnect={onConnect}
@@ -243,32 +280,77 @@ const FlowEditor = React.memo(() => {
 FlowEditor.displayName = "FlowEditor";
 
 export default function Page() {
+  const { data: blueprintsList } = useQuery(blueprintsQueries.list());
+  const latestBlueprintId = blueprintsList
+    ?.slice()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())?.[0]?.id;
+  const [selectedBlueprintId] = useQueryState("blueprint");
+  const targetBlueprintId = selectedBlueprintId || latestBlueprintId;
+  const [selectedCameraId] = useQueryState("camera");
+
+  const { data: streams } = useQuery(streamsQueries.list());
+  const placedStreams = streams?.filter(s => (Math.abs(s.position_x) > 0.01 || Math.abs(s.position_y) > 0.01) && s.blueprint_id === targetBlueprintId) || [];
+
   return (
     <>
-      <header className="bg-background sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b">
-        <div className="flex flex-1 items-center gap-2 px-3">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mr-2 h-14" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Project Management</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
-
-      <main className="relative flex-1 bg-background">
-        <div className="absolute inset-0 overflow-hidden">
+      <main className="relative flex-1 bg-[#141414] overflow-hidden flex flex-col">
+        {placedStreams.length > 0 ? (
+            <div className=" flex justify-center py-2 z-10">
+              <Carousel opts={{ align: "start" }} className="w-full max-w-4xl">
+              <CarouselContent>
+                {placedStreams.map(stream => (
+                  <CarouselItem key={stream.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <div className="p-1">
+                      <Link 
+                        to="/stream/$id" 
+                        params={{ id: stream.id }}
+                        className={cn(
+                          "relative aspect-video overflow-hidden border bg-black group  block transition-all",
+                          stream.id === selectedCameraId ? "border-primary ring-1 ring-primary  " : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <img 
+                          src={`http://localhost:8080/api/streams/${stream.id}/live`} 
+                          alt={stream.name} 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${stream.id}`;
+                          }}
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent p-3 pt-6 text-sm font-medium text-white truncate pointer-events-none">
+                          {stream.name}
+                        </div>
+                      </Link>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          </div>
+        ) : (
+          <div className="flex justify-center py-4 z-10">
+            <Empty className="p-4 border  max-w-md">
+              <EmptyHeader>
+                <EmptyMedia >
+                  <HugeiconsIcon icon={VideoCameraAiIcon} className="w-8 h-8" strokeWidth={1.5} />
+                </EmptyMedia>
+                <EmptyTitle >No Cameras Placed</EmptyTitle>
+                <EmptyDescription >
+                  Drag cameras from the left sidebar onto the blueprint below to view their live feeds.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          </div>
+        )}
+          <div className="relative flex-1 min-h-0 w-full border-t">
           <ReactFlowProvider>
             <FlowEditor />
           </ReactFlowProvider>
         </div>
 
-        <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <GridLoader />
-        </div>
+        
       </main>
     </>
   );

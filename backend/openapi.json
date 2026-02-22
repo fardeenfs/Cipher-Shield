@@ -56,6 +56,37 @@
         }
       }
     },
+    "/api/assistant/chat": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "operationId": "assistant_chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "AI response",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "response": "Today there were 3 high-risk events..."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/blueprints": {
       "get": {
         "tags": [
@@ -958,6 +989,18 @@
           }
         }
       },
+      "AssistantChatRequest": {
+        "type": "object",
+        "description": "Payload for assistant chat.",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "BlueprintResponse": {
         "type": "object",
         "description": "Blueprint as returned by API (image as base64 string).",
@@ -1252,7 +1295,7 @@
           "blueprint_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Set to null in JSON to unbind from blueprint; omit to leave unchanged.",
+            "description": "Set to null or \"\" in JSON to unbind from blueprint; omit to leave unchanged.",
             "nullable": true
           },
           "capture_interval_sec": {
@@ -1296,6 +1339,10 @@
     }
   },
   "tags": [
+    {
+      "name": "assistant",
+      "description": "AI assistant for app questions"
+    },
     {
       "name": "health",
       "description": "Service health check"

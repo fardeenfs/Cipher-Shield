@@ -1,5 +1,9 @@
 import axios from "axios";
 
+export interface AssistantChatRequest {
+  message: string;
+}
+
 export interface BlueprintSummary {
   id: string;
   name: string;
@@ -36,6 +40,7 @@ export interface AnalysisEvent {
   title?: string | null;
   created_at: string;
   raw_response?: string | null;
+  triggered_rule?: string | null;
   frame?: number[] | string | null;
 }
 
@@ -111,6 +116,14 @@ export interface ListEventsParams {
   offset?: number;
 }
 
+export interface AlertSettings {
+  alert_phone_number?: string | null;
+}
+
+export interface UpdateAlertSettings {
+  alert_phone_number?: string | null;
+}
+
 export const apiClient = axios.create({
   // MARK: BASEURL HERE
   baseURL: "http://localhost:8080/api",
@@ -123,6 +136,12 @@ export const api = {
   // --- HEALTH ---
   health: async (): Promise<{ status: string }> => {
     const { data } = await apiClient.get("/health");
+    return data;
+  },
+
+  // --- ASSISTANT ---
+  assistantChat: async (payload: AssistantChatRequest): Promise<{ response: string }> => {
+    const { data } = await apiClient.post("/assistant/chat", payload);
     return data;
   },
 
@@ -240,7 +259,16 @@ export const api = {
     await apiClient.delete(`/streams/${streamId}/rules/${ruleId}`);
   },
 
-  // --- NOTIFICATIONS ---
+  // --- NOTIFICATIONS & SETTINGS ---
+  getAlertPhoneNumber: async (): Promise<AlertSettings> => {
+    const { data } = await apiClient.get("/alert-phone-number");
+    return data;
+  },
+
+  updateAlertPhoneNumber: async (payload: UpdateAlertSettings): Promise<void> => {
+    await apiClient.put("/alert-phone-number", payload);
+  },
+
   testTwilioAlert: async (): Promise<{ message: string }> => {
     const { data } = await apiClient.post("/test-twilio");
     return data;

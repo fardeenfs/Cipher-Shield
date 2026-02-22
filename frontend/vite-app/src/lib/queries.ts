@@ -34,6 +34,10 @@ export const queryKeys = {
     snapshot: (id: string) => [...queryKeys.streams.snapshots(), id] as const,
     rules: (streamId: string) => [...queryKeys.streams.detail(streamId), "rules"] as const,
   },
+  settings: {
+    all: ["settings"] as const,
+    alertPhone: () => [...queryKeys.settings.all, "alertPhone"] as const,
+  },
 };
 
 // ==========================================
@@ -72,10 +76,10 @@ export const eventsMutations = {
 };
 
 export const streamsQueries = {
-  list: (blueprint_id?: string) =>
+  list: () =>
     queryOptions({
-      queryKey: [...queryKeys.streams.lists(), { blueprint_id }] as const,
-      queryFn: () => api.listStreams(blueprint_id),
+      queryKey: [...queryKeys.streams.lists()] as const,
+      queryFn: () => api.listStreams(),
     }),
   detail: (id: string) =>
     queryOptions({
@@ -112,6 +116,14 @@ export const rulesQueries = {
       queryKey: queryKeys.streams.rules(streamId),
       queryFn: () => api.listRules(streamId),
       enabled: !!streamId,
+    }),
+};
+
+export const settingsQueries = {
+  alertPhone: () =>
+    queryOptions({
+      queryKey: queryKeys.settings.alertPhone(),
+      queryFn: api.getAlertPhoneNumber,
     }),
 };
 
@@ -221,9 +233,26 @@ export const blueprintsMutations = {
     }),
 };
 
+export const settingsMutations = {
+  updateAlertPhone: (queryClient: QueryClient) =>
+    mutationOptions({
+      mutationFn: api.updateAlertPhoneNumber,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.settings.alertPhone() });
+      },
+    }),
+};
+
 export const notificationsMutations = {
   testTwilio: () =>
     mutationOptions({
       mutationFn: api.testTwilioAlert,
+    }),
+};
+
+export const assistantMutations = {
+  chat: () =>
+    mutationOptions({
+      mutationFn: api.assistantChat,
     }),
 };

@@ -39,6 +39,8 @@ export function AddCameraDialog() {
   const { data: streams } = useQuery(streamsQueries.list());
   const createStream = useMutation(streamsMutations.create(queryClient));
 
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setApiErrorMsg("");
@@ -60,6 +62,7 @@ export function AddCameraDialog() {
         source_type: sourceType,
         source_url: sourceUrl,
         capture_interval_sec: parseInt(interval, 10) || 5,
+        blueprint_id: null,
       },
       {
         onSuccess: () => {
@@ -139,6 +142,7 @@ export function AddCameraDialog() {
                   <SelectItem value="rtsp">RTSP</SelectItem>
                   <SelectItem value="snapshot">HTTP Snapshot</SelectItem>
                   <SelectItem value="mjpeg">HTTP MJPEG</SelectItem>
+                  <SelectItem value="mock">Mock (file / YouTube)</SelectItem>
                 </SelectContent>
               </Select>
             </Field>

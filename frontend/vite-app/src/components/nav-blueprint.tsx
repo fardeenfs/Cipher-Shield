@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import * as motion from "motion/react-client";
+import type { Variants } from "motion/react";
 import {
   SidebarGroup,
   SidebarMenu,
@@ -34,7 +36,7 @@ import { Badge } from "./ui/badge";
 import { Link } from "@tanstack/react-router";
 import { useQueryState } from "nuqs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { blueprintsQueries, blueprintsMutations } from "@/lib/queries";
+import { blueprintsQueries, blueprintsMutations, streamsQueries } from "@/lib/queries";
 import type { BlueprintSummary } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import {
@@ -50,12 +52,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { UploadBlueprintDialog } from "./upload-blueprint-dialog";
 
+const cardVariants: Variants = {
+  offscreen: {
+    scale: 0.90,
+    opacity: 0.90,
+  },
+  onscreen: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      bounce: 0.4,
+      duration: 0.8,
+    },
+  },
+};
+
 export function NavBlueprint() {
   const queryClient = useQueryClient();
   const { data: blueprints = [], isLoading } = useQuery(blueprintsQueries.list());
   const { isMobile } = useSidebar();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBlueprint, setSelectedBlueprint] = useQueryState("blueprint");
+  const [selectedCameraId, setSelectedCamera] = useQueryState("camera");
+  const { data: streams = [] } = useQuery(streamsQueries.list());
 
   const deleteBlueprintMutation = useMutation(blueprintsMutations.delete(queryClient));
   
@@ -99,7 +119,7 @@ export function NavBlueprint() {
           <UploadBlueprintDialog />
         </div>
         <SidebarGroup className="px-0 py-0">
-          <ScrollBlur className="max-h-100">
+          <ScrollBlur className="max-h-50">
             <SidebarMenu className="space-y-2">
           {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading blueprints...</div>}
           {!isLoading && filteredBlueprints.length === 0 && (
@@ -112,7 +132,15 @@ export function NavBlueprint() {
               deleteMutation={deleteBlueprintMutation}
               isMobile={isMobile}
               isSelected={selectedBlueprint === blueprint.id || (!selectedBlueprint && blueprint.id === filteredBlueprints[0]?.id)}
-              onSelect={() => setSelectedBlueprint(blueprint.id)}
+              onSelect={() => {
+                setSelectedBlueprint(blueprint.id);
+                if (selectedCameraId) {
+                  const camera = streams.find(s => s.id === selectedCameraId);
+                  if (camera && camera.blueprint_id !== blueprint.id) {
+                    setSelectedCamera(null);
+                  }
+                }
+              }}
             />
           ))}
         </SidebarMenu>
@@ -146,8 +174,14 @@ function BlueprintListItem({
     : `https://avatar.vercel.sh/${blueprint.id}`;
 
   return (
-    <SidebarMenuItem>
-      <AlertDialog>
+    <motion.div
+      initial="offscreen"
+      whileInView="onscreen"
+      viewport={{ amount: "some" }}
+      variants={cardVariants}
+    >
+      <SidebarMenuItem>
+        <AlertDialog>
         <Item
           variant="outline"
           onClick={onSelect}
@@ -177,12 +211,7 @@ function BlueprintListItem({
                 <span className="font-medium cursor-pointer">
                   {blueprint.name}
                 </span>
-                {isSelected && (
-                  <span className="relative flex h-2 w-2 shrink-0 ml-auto">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary shadow-[0_0_8px_var(--color-primary)]"></span>
-                  </span>
-                )}
+                
               </ItemTitle>
 
               <ItemDescription className="line-clamp-1 text-muted-foreground">
@@ -250,5 +279,6 @@ function BlueprintListItem({
         </AlertDialogContent>
       </AlertDialog>
     </SidebarMenuItem>
+    </motion.div>
   );
 }

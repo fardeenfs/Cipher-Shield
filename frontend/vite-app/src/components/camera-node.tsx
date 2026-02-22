@@ -1,17 +1,34 @@
-import { memo, useRef, useState, useEffect } from "react";
+import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { type Node, type NodeProps, useReactFlow } from "@xyflow/react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { VideoCameraAiIcon } from "@hugeicons/core-free-icons";
+import {   Rotate, SquareLock01Icon, Unlock, VideoCameraAiIcon } from "@hugeicons/core-free-icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { streamsMutations } from "@/lib/queries";
+import { cn } from "@/lib/utils";
+import { ButtonGroup, ButtonGroupSeparator } from "./ui/button-group";
+import { useQueryState } from "nuqs";
 
 type CameraNodeData = {
   number: number;
   label?: string;
-  rotation?: number; // 1. Add rotation to your data type
+  rotation?: number; 
+  isSelected?: boolean;
 };
+
+
+const LOCK_STORAGE_KEY = "camera-lock";
+
+function getInitialLockState(id: string): boolean {
+  try {
+    const stored = localStorage.getItem(`${LOCK_STORAGE_KEY}-${id}`);
+    if (stored === null) return true; // locked by default
+    return stored === "true";
+  } catch {
+    return true;
+  }
+}
 
 type CameraNode = Node<CameraNodeData, "camera">;
 
@@ -19,17 +36,31 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
   const { updateNodeData } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isRotating, setIsRotating] = useState(false);
-  
+    const [isLocked, setIsLocked] = useState(() => getInitialLockState(id));
+
   const queryClient = useQueryClient();
   const updateStreamMutation = useMutation(streamsMutations.update(queryClient));
+  const [, setSelectedCamera] = useQueryState("camera");
+
+  
+  const toggleLock = useCallback(() => {
+    setIsLocked((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(`${LOCK_STORAGE_KEY}-${id}`, String(next));
+      } catch { /* storage full — ignore */ }
+      return next;
+    });
+  }, [id]);
 
   // 0 degrees if no rotation is set
   const rotation = data.rotation || 0;
   const latestRotationRef = useRef<number>(rotation);
 
   // Start tracking the mouse drag
-  const onRotateStart = (event: React.MouseEvent<HTMLDivElement>) => {
+  const onRotateStart = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    if (isLocked) return;
     setIsRotating(true);
   };
 
@@ -79,20 +110,41 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
   return (
     <div
       ref={nodeRef}
-      className="relative"
+      className={cn("relative", isLocked ? "nodrag" : "")}
       style={{ transform: `rotate(${rotation}deg)` }}
+      onPointerDown={() => setSelectedCamera(id)}
     >
-      {/*  Handle (Only visible when node is selected) */}
-      {selected && (
-        <div
-          className="absolute -top-4 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary border-2 border-background rounded-full cursor-grab active:cursor-grabbing nodrag"
-          onMouseDown={onRotateStart}
-        />
+{(selected || isLocked) && (
+        <ButtonGroup
+          className="absolute -top-8 left-1/2 -translate-x-1/2 scale-75 origin-bottom cursor-grab active:cursor-grabbing nodrag"
+        >
+          <Button size="xs" variant="secondary" onClick={toggleLock}>
+            <HugeiconsIcon icon={isLocked ? SquareLock01Icon : Unlock} strokeWidth={2} />
+          </Button>
+          
+          {/* Only show the separator and rotate button if the node is UNLOCKED */}
+          {!isLocked && (
+            <>
+              <ButtonGroupSeparator />
+              <Button size="xs" variant="secondary" onMouseDown={onRotateStart}>
+                <HugeiconsIcon icon={Rotate} strokeWidth={2} />
+              </Button>
+            </>
+          )}
+        </ButtonGroup>
       )}
-
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            className={cn(
+              "rounded-full transition-all",
+              (selected || data.isSelected) && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+              // CHANGED: Added reduced opacity and subtle grayscale when locked
+              isLocked && "opacity-60 grayscale hover:opacity-80" 
+            )}
+          >
             <HugeiconsIcon icon={VideoCameraAiIcon} />
           </Button>
         </TooltipTrigger>
