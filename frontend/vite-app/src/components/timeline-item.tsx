@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarSeparator } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Item, ItemContent, ItemDescription, ItemTitle } from "./ui/item";
+import { useNavigate } from "@tanstack/react-router";
 
 export interface TimelineEntry {
   id: string;
@@ -34,6 +35,7 @@ export interface TimelineEntry {
   risk_level: string;
   triggered_rule?: string | null;
   status?: string;
+  stream_id?: string;
 }
 
 interface TimelineItemProps {
@@ -67,6 +69,7 @@ export function TimelineItem({
 }: TimelineItemProps) {
   const queryClient = useQueryClient();
   const updateEventMutation = useMutation(eventsMutations.update(queryClient));
+  const navigate = useNavigate();
 
   const risk = entry.risk_level?.toLowerCase() || 'none';
   const severityColor = risk === 'high' ? 'bg-destructive' 
@@ -130,7 +133,15 @@ export function TimelineItem({
               )}
 
               {entry.triggered_rule && (
-                <Item variant="outline" className="mt-1 w-full pointer-events-none">
+                <Item 
+                  variant="outline" 
+                  className="mt-1 w-full cursor-pointer hover:bg-accent transition-colors"
+                  onClick={() => {
+                    if (entry.stream_id) {
+                      navigate({ to: "/stream/$id", params: { id: entry.stream_id } });
+                    }
+                  }}
+                >
                   <ItemContent className="flex w-full flex-col items-start gap-1.5">
                     <ItemTitle className="uppercase flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-muted-foreground leading-none">
                       <HugeiconsIcon icon={Alert02Icon} strokeWidth={2.5} className="size-3 text-primary" />

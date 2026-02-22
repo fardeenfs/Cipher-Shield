@@ -137,7 +137,7 @@ export function UploadBlueprintDialog() {
                       />
                     )}
                   </span>
-                  <div className="w-full pr-8">
+                  <div className="w-full pr-0">
                     <p className="text-pretty text-xs font-medium text-foreground truncate">
                       {file.name}
                     </p>
