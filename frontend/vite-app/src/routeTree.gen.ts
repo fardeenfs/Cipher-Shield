@@ -9,68 +9,110 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as StreamIdRouteImport } from './routes/stream/$id'
+import { Route as LandingRouteImport } from './routes/landing'
+import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutStreamIdRouteImport } from './routes/_layout/stream/$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StreamIdRoute = StreamIdRouteImport.update({
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LayoutIndexRoute = LayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutStreamIdRoute = LayoutStreamIdRouteImport.update({
   id: '/stream/$id',
   path: '/stream/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/stream/$id': typeof StreamIdRoute
+  '/': typeof LayoutIndexRoute
+  '/landing': typeof LandingRoute
+  '/stream/$id': typeof LayoutStreamIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/stream/$id': typeof StreamIdRoute
+  '/landing': typeof LandingRoute
+  '/': typeof LayoutIndexRoute
+  '/stream/$id': typeof LayoutStreamIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/stream/$id': typeof StreamIdRoute
+  '/_layout': typeof LayoutRouteWithChildren
+  '/landing': typeof LandingRoute
+  '/_layout/': typeof LayoutIndexRoute
+  '/_layout/stream/$id': typeof LayoutStreamIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/stream/$id'
+  fullPaths: '/' | '/landing' | '/stream/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/stream/$id'
-  id: '__root__' | '/' | '/stream/$id'
+  to: '/landing' | '/' | '/stream/$id'
+  id: '__root__' | '/_layout' | '/landing' | '/_layout/' | '/_layout/stream/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  StreamIdRoute: typeof StreamIdRoute
+  LayoutRoute: typeof LayoutRouteWithChildren
+  LandingRoute: typeof LandingRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/stream/$id': {
-      id: '/stream/$id'
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_layout/': {
+      id: '/_layout/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/stream/$id': {
+      id: '/_layout/stream/$id'
       path: '/stream/$id'
       fullPath: '/stream/$id'
-      preLoaderRoute: typeof StreamIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof LayoutStreamIdRouteImport
+      parentRoute: typeof LayoutRoute
     }
   }
 }
 
+interface LayoutRouteChildren {
+  LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutStreamIdRoute: typeof LayoutStreamIdRoute
+}
+
+const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutIndexRoute: LayoutIndexRoute,
+  LayoutStreamIdRoute: LayoutStreamIdRoute,
+}
+
+const LayoutRouteWithChildren =
+  LayoutRoute._addFileChildren(LayoutRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  StreamIdRoute: StreamIdRoute,
+  LayoutRoute: LayoutRouteWithChildren,
+  LandingRoute: LandingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

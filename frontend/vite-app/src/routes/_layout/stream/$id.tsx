@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { ActivityIcon, VideoIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
-export const Route = createFileRoute("/stream/$id")({
+export const Route = createFileRoute("/_layout/stream/$id")({
   component: RouteComponent,
 });
 

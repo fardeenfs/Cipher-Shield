@@ -185,7 +185,7 @@ export function TimelineItem({
                         <AlertDialogAction
                           onClick={() => {
                             updateEventMutation.mutate(
-                              { id: entry.id, payload: { status: "active" } },
+                              { id: entry.id, payload: { status: "unresolved" } },
                               {
                                 onSuccess: () => {
                                   if (onResolve) onResolve();
