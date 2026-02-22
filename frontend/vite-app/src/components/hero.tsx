@@ -101,7 +101,7 @@ export function HeroSection() {
 						alt="light app screen"
 						className="dark:hidden"
 						height="auto"
-						src="https://storage.efferd.com/screen/dashboard-light.webp"
+						src=""
 						width="auto"
 					/>
 					<img
