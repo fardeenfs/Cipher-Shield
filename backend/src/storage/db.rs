@@ -151,6 +151,7 @@ pub async fn insert_event(
     description: &str,
     events: Value,
     risk_level: &str,
+    triggered_rule: Option<&str>,
     title: Option<&str>,
     frame: Option<&[u8]>,
     status: &str,
@@ -158,16 +159,17 @@ pub async fn insert_event(
     let row = sqlx::query_as!(
         AnalysisEvent,
         r#"INSERT INTO analysis_events
-               (id, stream_id, captured_at, description, events, risk_level, title, frame, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+               (id, stream_id, captured_at, description, events, risk_level, triggered_rule, title, frame, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            RETURNING id, stream_id, captured_at, description,
-                     events, risk_level, raw_response, title, frame, status, created_at"#,
+                     events, risk_level, triggered_rule, raw_response, title, frame, status, created_at"#,
         id,
         stream_id,
         captured_at,
         description,
         events,
         risk_level,
+        triggered_rule,
         title,
         frame,
         status,
@@ -183,7 +185,7 @@ pub async fn list_events(db: &PgPool, query: &EventQuery) -> Result<Vec<Analysis
     // sqlx doesn't support fully dynamic queries with query_as!, so we use
     // QueryBuilder for optional filters.
     let mut qb = sqlx::QueryBuilder::new(
-        "SELECT id, stream_id, captured_at, description, events, risk_level, raw_response, title, frame, status, created_at FROM analysis_events WHERE 1=1",
+        "SELECT id, stream_id, captured_at, description, events, risk_level, triggered_rule, raw_response, title, frame, status, created_at FROM analysis_events WHERE 1=1",
     );
 
     if let Some(sid) = query.stream_id {
@@ -217,7 +219,7 @@ pub async fn get_event(db: &PgPool, id: Uuid) -> Result<AnalysisEvent> {
     sqlx::query_as!(
         AnalysisEvent,
         r#"SELECT id, stream_id, captured_at, description,
-                  events, risk_level, raw_response, title, frame, status, created_at
+                  events, risk_level, triggered_rule, raw_response, title, frame, status, created_at
            FROM analysis_events WHERE id = $1"#,
         id
     )
@@ -231,7 +233,7 @@ pub async fn update_event_status(db: &PgPool, id: Uuid, status: &str) -> Result<
         AnalysisEvent,
         r#"UPDATE analysis_events SET status = $1 WHERE id = $2
            RETURNING id, stream_id, captured_at, description, events, risk_level,
-                     raw_response, title, frame, status, created_at"#,
+                     triggered_rule, raw_response, title, frame, status, created_at"#,
         status,
         id
     )

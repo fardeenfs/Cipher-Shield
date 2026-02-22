@@ -21,6 +21,10 @@ pub struct AnalysisResult {
     pub description: String,
     pub events: Vec<DetectedEvent>,
     pub risk_level: RiskLevel,
+    /// Set by the VLM to the exact description of the custom rule that determined
+    /// the risk level, or null if the VLM used its own judgment.
+    #[serde(default)]
+    pub triggered_rule: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,7 +67,8 @@ Analyze the provided camera frame and respond ONLY with a valid JSON object usin
       "confidence": 0.95
     }
   ],
-  "risk_level": "one of: none, low, medium, high"
+  "risk_level": "one of: none, low, medium, high",
+  "triggered_rule": "Exact description text of the custom rule that determined the risk level, or null if no custom rule was used"
 }
 
 Return ONLY the JSON object. Do not include any other text, markdown, or explanation."#;
@@ -93,8 +98,10 @@ pub fn build_rules_prompt(rules: &[VlmRule]) -> String {
         out.push_str(&format!("- {}: {}\n", rule.threat_level.to_uppercase(), rule.description));
     }
     out.push_str(
-        "\nIf a rule matches what you see, use its threat level. \
-         If multiple rules match, use the highest level.",
+        "\nIf a rule matches what you see, use its threat level and set triggered_rule \
+         to the exact description text of that rule. \
+         If multiple rules match, use the highest level and set triggered_rule to that rule's description. \
+         If no custom rule matches, use your own judgment and set triggered_rule to null.",
     );
     out
 }
@@ -141,5 +148,6 @@ pub fn parse_or_fallback(raw: &str) -> AnalysisResult {
         description: raw.to_string(),
         events: vec![],
         risk_level: RiskLevel::None,
+        triggered_rule: None,
     })
 }

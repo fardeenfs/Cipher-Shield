@@ -71,6 +71,9 @@ pub struct AnalysisEvent {
     pub description: String,
     pub events: Value,
     pub risk_level: String,
+    /// The custom rule description that caused this risk level, or None if the
+    /// VLM used its own judgment.
+    pub triggered_rule: Option<String>,
     pub raw_response: Option<String>,
     pub title: Option<String>,
     pub frame: Option<Vec<u8>>,
