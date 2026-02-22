@@ -84,6 +84,12 @@ pub struct UpdateEventRequest {
     pub status: String,
 }
 
+/// Payload for assistant chat.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct AssistantChatRequest {
+    pub message: String,
+}
+
 /// Query filters for listing analysis events.
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct EventQuery {

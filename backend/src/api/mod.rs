@@ -42,6 +42,8 @@ pub fn router(state: Arc<AppState>, stream_manager: Arc<StreamManager>) -> Route
             "/api/streams/:id/rules/:rule_id",
             put(routes::update_rule).delete(routes::delete_rule),
         )
+        // Assistant
+        .route("/api/assistant/chat", post(routes::assistant_chat))
         // Events
         .route("/api/events", get(routes::list_events))
         .route("/api/events/:id", get(routes::get_event).put(routes::update_event))

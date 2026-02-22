@@ -14,13 +14,14 @@ use uuid::Uuid;
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 
+
 use crate::{
     error::{AppError, Result},
     state::AppState,
     storage::{
         db,
         models::{
-            BlueprintResponse, CreateBlueprintRequest,
+            AssistantChatRequest, BlueprintResponse, CreateBlueprintRequest,
             CreateRuleRequest, CreateStreamRequest, EventQuery, StreamQuery,
             UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
@@ -338,6 +339,26 @@ pub async fn update_event(
 ) -> Result<impl IntoResponse> {
     let event = db::update_event_status(&state.db, id, &req.status).await?;
     Ok(Json(event))
+}
+
+// ─── Assistant ───────────────────────────────────────────────────────────────
+
+#[utoipa::path(
+    post,
+    path = "/api/assistant/chat",
+    tag = "assistant",
+    request_body = AssistantChatRequest,
+    responses(
+        (status = 200, description = "AI response", body = serde_json::Value,
+         example = json!({"response": "Today there were 3 high-risk events..."}))
+    )
+)]
+pub async fn assistant_chat(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<AssistantChatRequest>,
+) -> Result<impl IntoResponse> {
+    let response = crate::assistant::chat(&state.db, &req.message).await?;
+    Ok(Json(serde_json::json!({ "response": response })))
 }
 
 // ─── Test Twilio alert (for development) ─────────────────────────────────────
