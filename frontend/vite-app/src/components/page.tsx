@@ -57,7 +57,7 @@ const initialNodes: Node[] = [
     id: "n3",
     type: "imageNode",
     data: { label: "Node 4", showBlindSpot: true },
-    position: { x: 0, y: 0 },
+    position: { x: 15, y: 0 },
     zIndex: -1,
     draggable: false,
     selectable: false,
@@ -167,9 +167,13 @@ const FlowEditor = React.memo(() => {
         onConnect={onConnect}
         panOnDrag={false}
         zoomOnScroll={false}
+        zoomOnPinch={false}
+        zoomOnDoubleClick={false}
+        panOnScroll={false}
+        preventScrolling={false}
         nodeExtent={[
           [0, 0],
-          [600, 400],
+          [BOUNDS.width, BOUNDS.height],
         ]}
         fitView
       ></ReactFlow>

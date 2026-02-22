@@ -5,8 +5,9 @@ import {
   type Node,
   type NodeProps,
 } from "@xyflow/react";
-import img from "../assets/blueprint-1.jpg";
 import { BOUNDS } from "@/lib/constants";
+import { useQuery } from "@tanstack/react-query";
+import { blueprintsQueries } from "@/lib/queries";
 type ImageNodeDATA = {
   label: string;
   showBlindSpot: boolean;
@@ -15,8 +16,22 @@ type ImgNode = Node<ImageNodeDATA, "camera">;
 
 const ImageNode = ({ id }: NodeProps<ImgNode>) => {
   const nodes = useNodes();
-  const nodeData = useNodesData(id);
-  const showBlindSpot = nodeData?.showBlindSpot ?? true;
+  const nodeData = useNodesData<ImgNode>(id);
+  const showBlindSpot = nodeData?.data?.showBlindSpot ?? true;
+
+  const { data: blueprintsList } = useQuery(blueprintsQueries.list());
+  const latestBlueprintId = blueprintsList
+    ?.slice()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())?.[0]?.id;
+
+  const { data: blueprintDetails } = useQuery({
+    ...blueprintsQueries.detail(latestBlueprintId as string),
+    enabled: !!latestBlueprintId,
+  });
+
+  const displayImage = blueprintDetails?.image_base64
+    ? `data:image/jpeg;base64,${blueprintDetails.image_base64}`
+    : '';
 
   const cameras = nodes.filter((n) => n.type === "cameraNode");
 
@@ -91,7 +106,7 @@ const ImageNode = ({ id }: NodeProps<ImgNode>) => {
           but allows us to apply the dynamic lighting mask! 
         */}
         <image
-          href={img}
+          href={displayImage}
           width="100%"
           height="100%"
           preserveAspectRatio="xMidYMid meet"

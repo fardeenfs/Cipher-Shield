@@ -22,6 +22,8 @@ import { TimelineItem } from "./timeline-item";
 import { Badge } from "./ui/badge";
 import { ScrollBlur } from "./scroll-blur";
 
+import { UploadBlueprintDialog } from "./upload-blueprint-dialog";
+
 // This is sample data.
 const data = {
   user: {
@@ -140,10 +142,7 @@ export function SidebarRight({
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-              <span>Replace blueprint</span>
-            </SidebarMenuButton>
+            <UploadBlueprintDialog />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
