@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { useQueryState } from "nuqs";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Input } from "./ui/input";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Search } from "@hugeicons/core-free-icons";
 import { Badge } from "./ui/badge";
 import { ScrollBlur } from "./scroll-blur";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -41,17 +45,26 @@ import { cn } from "@/lib/utils";
 
 export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {events:AnalysisEvent[] | undefined, activeEvents:AnalysisEvent[], resolvedEvents:AnalysisEvent[]}) {
     const [alertFilter] = useQueryState("alertFilter", { defaultValue: "all" });
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const filterByRisk = (e: AnalysisEvent) => {
+    const filterFn = (e: AnalysisEvent) => {
       const risk = e.risk_level?.toLowerCase() || 'none';
       if (risk === 'none') return false;
       if (alertFilter !== 'all' && risk !== alertFilter) return false;
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = e.title?.toLowerCase().includes(query) || false;
+        const matchesDescription = e.description?.toLowerCase().includes(query) || false;
+        const matchesRule = e.triggered_rule?.toLowerCase().includes(query) || false;
+        if (!matchesTitle && !matchesDescription && !matchesRule) return false;
+      }
       return true;
     };
 
-    const validEvents = events?.filter(filterByRisk) || [];
-    const validActive = activeEvents.filter(filterByRisk);
-    const validResolved = resolvedEvents.filter(filterByRisk);
+    const validEvents = events?.filter(filterFn) || [];
+    const validActive = activeEvents.filter(filterFn);
+    const validResolved = resolvedEvents.filter(filterFn);
 
     const indicatorClasses = alertFilter === 'high' ? 'bg-destructive shadow-[0_0_8px_var(--destructive)]'
                            : alertFilter === 'medium' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]'
@@ -68,6 +81,22 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            <div className=" mb-4">
+              <div className="relative w-full">
+                <HugeiconsIcon
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  icon={Search}
+                  strokeWidth={2}
+                />
+                <Input 
+                  type="search" 
+                  placeholder="Search alerts..." 
+                  className="pl-9 w-full" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
             <SidebarGroup className="px-0 pt-0">
               <Tabs defaultValue="active" className="w-full">
                   <TabsList className="w-full grid grid-cols-2">

@@ -257,25 +257,25 @@ function CameraList({
                   />
                 </ItemMedia>
 
-                <ItemContent className="flex-col items-start gap-1">
-                  <ItemTitle className="flex items-center gap-2">
+                <ItemContent className="flex-col items-start gap-1 min-w-0 flex-1">
+                  <ItemTitle className="flex items-center justify-between gap-2 w-full">
                     <Link
                       to="/stream/$id"
                       params={{ id: camera.id }}
                       onClick={(e) => e.stopPropagation()}
-                      className="font-medium hover:underline hover:decoration-foreground hover:decoration-2 underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-none"
+                      className="font-medium min-w-0 flex-1 truncate block hover:underline hover:decoration-foreground hover:decoration-2 underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-none"
                     >
                       {camera.name}
                     </Link>
 
                     {/* Pulse */}
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className={cn("animate-ping absolute inline-flex h-full w-full  opacity-60", camera.enabled ? "bg-primary" : "bg-destructive")}></span>
-                      <span className={cn("relative inline-flex  h-2 w-2", camera.enabled ? "bg-primary shadow-[0_0_8px_var(--color-primary)]" : "bg-destructive shadow-[0_0_8px_var(--color-destructive)]")}></span>
+                    <span className="relative flex h-2 w-2 shrink-0 mr-6">
+                      <span className={cn("animate-ping absolute inline-flex h-full w-full opacity-60", camera.enabled ? "bg-primary" : "bg-destructive")}></span>
+                      <span className={cn("relative inline-flex h-2 w-2", camera.enabled ? "bg-primary shadow-[0_0_8px_var(--color-primary)]" : "bg-destructive shadow-[0_0_8px_var(--color-destructive)]")}></span>
                     </span>
                   </ItemTitle>
 
-                  <ItemDescription className="line-clamp-1 text-muted-foreground">
+                  <ItemDescription className="truncate w-full text-muted-foreground block text-left">
                     {camera.source_url}
                   </ItemDescription>
                 </ItemContent>
@@ -283,7 +283,7 @@ function CameraList({
             </Item>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuAction className="aria-expanded:bg-muted">
+                <SidebarMenuAction className="aria-expanded:bg-muted mt-0.5">
                   <HugeiconsIcon
                     icon={MoreHorizontalCircle01Icon}
                     strokeWidth={2}
