@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
       risk_level: e.risk_level,
       triggered_rule: e.triggered_rule,
       status: e.status,
+      stream_id: e.stream_id,
     };
   };
 

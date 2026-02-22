@@ -35,6 +35,7 @@ export function SidebarRight({
       from: fromDate || null,
       to: toDate || null,
     }),
+    refetchInterval: 1000,
   });
 
   // Separate events into Active and Resolved
