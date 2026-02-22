@@ -32,8 +32,11 @@ export interface AnalysisEvent {
   description: string;
   events: Record<string, unknown> | unknown[];
   risk_level: string;
+  status: string;
+  title?: string | null;
   created_at: string;
   raw_response?: string | null;
+  frame?: number[] | string | null;
 }
 
 export interface CreateStreamRequest {
@@ -96,6 +99,10 @@ export interface UpdateRuleRequest {
   position?: number | null;
 }
 
+export interface UpdateEventRequest {
+  status: string;
+}
+
 // Custom interface for list_events query parameters
 export interface ListEventsParams {
   stream_id?: string | null;
@@ -129,6 +136,11 @@ export const api = {
 
   getEvent: async (id: string): Promise<AnalysisEvent> => {
     const { data } = await apiClient.get(`/events/${id}`);
+    return data;
+  },
+
+  updateEvent: async ({ id, payload }: { id: string; payload: UpdateEventRequest }): Promise<AnalysisEvent> => {
+    const { data } = await apiClient.put(`/events/${id}`, payload);
     return data;
   },
 
