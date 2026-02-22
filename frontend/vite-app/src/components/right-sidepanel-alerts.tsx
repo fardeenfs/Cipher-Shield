@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
       image: imageSrc,
       imageAlt: e.title || "Event Frame",
       risk_level: e.risk_level,
+      triggered_rule: e.triggered_rule,
     };
   };
 

@@ -1,5 +1,9 @@
 import axios from "axios";
 
+export interface AssistantChatRequest {
+  message: string;
+}
+
 export interface BlueprintSummary {
   id: string;
   name: string;
@@ -36,6 +40,7 @@ export interface AnalysisEvent {
   title?: string | null;
   created_at: string;
   raw_response?: string | null;
+  triggered_rule?: string | null;
   frame?: number[] | string | null;
 }
 
@@ -131,6 +136,12 @@ export const api = {
   // --- HEALTH ---
   health: async (): Promise<{ status: string }> => {
     const { data } = await apiClient.get("/health");
+    return data;
+  },
+
+  // --- ASSISTANT ---
+  assistantChat: async (payload: AssistantChatRequest): Promise<{ response: string }> => {
+    const { data } = await apiClient.post("/assistant/chat", payload);
     return data;
   },
 

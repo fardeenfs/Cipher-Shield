@@ -3,7 +3,7 @@ import {
   mutationOptions,
   type QueryClient,
 } from "@tanstack/react-query";
-import { type ListEventsParams, api, type CreateRuleRequest, type UpdateRuleRequest, type UpdateBlueprintRequest, type UpdateAlertSettings } from "./services";
+import { type ListEventsParams, api, type CreateRuleRequest, type UpdateRuleRequest, type UpdateBlueprintRequest } from "./services";
 
 // ==========================================
 // QUERY KEYS
@@ -247,5 +247,12 @@ export const notificationsMutations = {
   testTwilio: () =>
     mutationOptions({
       mutationFn: api.testTwilioAlert,
+    }),
+};
+
+export const assistantMutations = {
+  chat: () =>
+    mutationOptions({
+      mutationFn: api.assistantChat,
     }),
 };

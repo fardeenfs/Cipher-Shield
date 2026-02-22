@@ -142,6 +142,7 @@ export function AddCameraDialog() {
                   <SelectItem value="rtsp">RTSP</SelectItem>
                   <SelectItem value="snapshot">HTTP Snapshot</SelectItem>
                   <SelectItem value="mjpeg">HTTP MJPEG</SelectItem>
+                  <SelectItem value="mock">Mock (file / YouTube)</SelectItem>
                 </SelectContent>
               </Select>
             </Field>

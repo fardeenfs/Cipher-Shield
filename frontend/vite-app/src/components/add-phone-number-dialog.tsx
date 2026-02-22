@@ -69,7 +69,7 @@ export function GlobalPhoneNumberDialog() {
       <DialogTrigger asChild>
         <SidebarMenuButton>
           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          <span> Global Alert Number</span>
+          <span>  Alert Number</span>
         </SidebarMenuButton>
       </DialogTrigger>
 

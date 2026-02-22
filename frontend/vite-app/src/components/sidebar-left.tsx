@@ -59,14 +59,7 @@ export function SidebarLeft({
 
             {/* <NavPrompts prompts={prompts} /> */}
           </SidebarContent>
-          <SidebarRail />
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <GlobalPhoneNumberDialog />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
+         
         </>
       );
     }
@@ -110,7 +103,7 @@ export function SidebarLeft({
                 <div className="bg-primary/10 p-1.5 border border-primary shadow-sm shrink-0">
                   <HugeiconsIcon icon={Target01Icon} className="text-primary size-5" strokeWidth={2.5} />
                 </div>
-                <span className="bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/60 leading-none truncate">Threat Lens</span>
+                <span className="bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/60 leading-none truncate">ThreatLens</span>
               </div>
 
               {/* System Status Widget */}
@@ -127,6 +120,14 @@ export function SidebarLeft({
             </div>
           </SidebarHeader>
       {renderContent}
+       <SidebarRail />
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <GlobalPhoneNumberDialog />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
     </Sidebar>
   );
 }
