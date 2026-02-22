@@ -22,7 +22,7 @@ use crate::{
         models::{
             BlueprintResponse, CreateBlueprintRequest,
             CreateRuleRequest, CreateStreamRequest, EventQuery, StreamQuery,
-            UpdateBlueprintRequest, UpdateRuleRequest, UpdateStreamRequest,
+            UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
     },
     streams::manager::{StreamManager, StreamRecord},
@@ -317,6 +317,26 @@ pub async fn get_event(
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     let event = db::get_event(&state.db, id).await?;
+    Ok(Json(event))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/events/{id}",
+    tag = "events",
+    params(("id" = Uuid, Path, description = "Event ID")),
+    request_body = UpdateEventRequest,
+    responses(
+        (status = 200, description = "Event updated", body = AnalysisEvent),
+        (status = 404, description = "Event not found")
+    )
+)]
+pub async fn update_event(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    Json(req): Json<UpdateEventRequest>,
+) -> Result<impl IntoResponse> {
+    let event = db::update_event_status(&state.db, id, &req.status).await?;
     Ok(Json(event))
 }
 

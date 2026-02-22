@@ -226,6 +226,20 @@ pub async fn get_event(db: &PgPool, id: Uuid) -> Result<AnalysisEvent> {
     .ok_or_else(|| AppError::NotFound(format!("Event {id} not found")))
 }
 
+pub async fn update_event_status(db: &PgPool, id: Uuid, status: &str) -> Result<AnalysisEvent> {
+    let row = sqlx::query_as!(
+        AnalysisEvent,
+        r#"UPDATE analysis_events SET status = $1 WHERE id = $2
+           RETURNING id, stream_id, captured_at, description, events, risk_level,
+                     raw_response, title, frame, status, created_at"#,
+        status,
+        id
+    )
+    .fetch_optional(db)
+    .await?;
+    row.ok_or_else(|| AppError::NotFound(format!("Event {id} not found")))
+}
+
 // ─── Stream Rules ─────────────────────────────────────────────────────────────
 
 pub async fn list_rules(db: &PgPool, stream_id: Uuid) -> Result<Vec<StreamRule>> {
