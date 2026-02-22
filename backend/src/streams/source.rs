@@ -24,6 +24,11 @@ pub enum SourceType {
     Snapshot,
     /// Local USB / webcam. Requires `ffmpeg` on PATH.
     Usb,
+    /// Mock / test source. Two sub-modes selected by `source_url`:
+    ///   - Local file path → played on repeat with `-stream_loop -1`.
+    ///   - YouTube / web URL → resolved via `yt-dlp`, played once then restarted.
+    /// Requires `ffmpeg` on PATH; YouTube mode additionally requires `yt-dlp`.
+    Mock,
 }
 
 impl std::str::FromStr for SourceType {
@@ -35,6 +40,7 @@ impl std::str::FromStr for SourceType {
             "mjpeg" => Ok(Self::Mjpeg),
             "snapshot" => Ok(Self::Snapshot),
             "usb" => Ok(Self::Usb),
+            "mock" => Ok(Self::Mock),
             other => Err(format!("Unknown source_type: '{other}'")),
         }
     }
@@ -47,6 +53,7 @@ impl std::fmt::Display for SourceType {
             Self::Mjpeg => write!(f, "mjpeg"),
             Self::Snapshot => write!(f, "snapshot"),
             Self::Usb => write!(f, "usb"),
+            Self::Mock => write!(f, "mock"),
         }
     }
 }

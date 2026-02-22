@@ -133,9 +133,15 @@ pub fn build_vlm_client(cfg: &VlmBackend) -> DynVlmClient {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /// Try to parse the VLM's raw text output as `AnalysisResult`.
-/// Falls back to a minimal result with just the description if JSON is invalid.
+///
+/// Strategy:
+/// 1. Strip markdown code fences and try a direct parse.
+/// 2. If that fails, scan from the rightmost `{` backwards — this finds the
+///    last complete JSON object in the output, which is the model's final
+///    answer when it emits chain-of-thought reasoning alongside the JSON.
+/// 3. Fall back to a minimal result using the raw text as the description.
 pub fn parse_or_fallback(raw: &str) -> AnalysisResult {
-    // Strip markdown code fences if the model wrapped the JSON
+    // Strip markdown code fences if the model wrapped the JSON.
     let cleaned = raw
         .trim()
         .trim_start_matches("```json")
@@ -143,11 +149,29 @@ pub fn parse_or_fallback(raw: &str) -> AnalysisResult {
         .trim_end_matches("```")
         .trim();
 
-    serde_json::from_str(cleaned).unwrap_or_else(|_| AnalysisResult {
+    // 1. Direct parse — happy path.
+    if let Ok(result) = serde_json::from_str::<AnalysisResult>(cleaned) {
+        return result;
+    }
+
+    // 2. Scan from the rightmost '{' backwards.
+    // Each iteration tries to parse from that position to the end of the string.
+    // Inner braces (e.g. inside arrays) fail to parse and we back up further
+    // until we find the outermost object.
+    let mut search_end = cleaned.len();
+    while let Some(start) = cleaned[..search_end].rfind('{') {
+        if let Ok(result) = serde_json::from_str::<AnalysisResult>(&cleaned[start..]) {
+            return result;
+        }
+        search_end = start;
+    }
+
+    // 3. Complete fallback — store raw text so we never lose data.
+    AnalysisResult {
         title: None,
         description: raw.to_string(),
         events: vec![],
         risk_level: RiskLevel::None,
         triggered_rule: None,
-    })
+    }
 }
