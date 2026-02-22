@@ -97,7 +97,7 @@ export function NavCamera() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 pb-4">
-        <div className="relative mb-4 px-4">
+        <div className="relative mb-4 ">
           <div className="relative">
             <HugeiconsIcon
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -115,7 +115,7 @@ export function NavCamera() {
         </div>
         <SidebarGroup className="px-0 py-0">
           <ScrollBlur className="max-h-100">
-            <SidebarMenu className="space-y-2 px-4">
+            <SidebarMenu className="space-y-2 ">
           {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading streams...</div>}
           {!isLoading && filteredCameras.length === 0 && (
              <div className="p-4 text-center text-xs text-muted-foreground">No cameras match your search.</div>
