@@ -33,6 +33,7 @@ export interface TimelineEntry {
   imageAlt?: string;
   risk_level: string;
   triggered_rule?: string | null;
+  status?: string;
 }
 
 interface TimelineItemProps {
@@ -40,7 +41,6 @@ interface TimelineItemProps {
   index: number;
   isLast: boolean;
   onResolve?: () => void;
-  hideResolve?: boolean;
 }
 
 const cardVariants: Variants = {
@@ -64,7 +64,6 @@ export function TimelineItem({
   index,
   isLast,
   onResolve,
-  hideResolve,
 }: TimelineItemProps) {
   const queryClient = useQueryClient();
   const updateEventMutation = useMutation(eventsMutations.update(queryClient));
@@ -148,8 +147,49 @@ export function TimelineItem({
                 {entry.description}
               </div>
 
-              {!hideResolve && (
-                <div className="pt-2">
+              <div className="pt-2">
+                {entry.status === "resolved" ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-border bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <div className="mr-2">
+                          <HugeiconsIcon icon={CheckmarkBadge01Icon} strokeWidth={2} />
+                        </div>
+                        Unresolve Incident
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Unresolve Incident?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to mark this incident as unresolved? It will be moved back to the active events list.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            updateEventMutation.mutate(
+                              { id: entry.id, payload: { status: "active" } },
+                              {
+                                onSuccess: () => {
+                                  if (onResolve) onResolve();
+                                },
+                              }
+                            );
+                          }}
+                          className="bg-amber-600 text-white hover:bg-amber-700"
+                        >
+                          Mark as Unresolved
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -190,8 +230,8 @@ export function TimelineItem({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </div>
-              )}
+                )}
+              </div>
             </SidebarGroupContent>
           </CollapsibleContent>
         </Collapsible>

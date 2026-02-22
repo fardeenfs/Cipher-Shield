@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
       imageAlt: e.title || "Event Frame",
       risk_level: e.risk_level,
       triggered_rule: e.triggered_rule,
+      status: e.status,
     };
   };
 
@@ -142,7 +143,6 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
                               entry={mapEventToEntry(event)}
                               index={index}
                               isLast={index === validResolved.length - 1}
-                              hideResolve // Do not show resolve button on already resolved events
                             />
                           ))}
                         </div>
