@@ -151,20 +151,26 @@ pub async fn insert_event(
     description: &str,
     events: Value,
     risk_level: &str,
+    title: Option<&str>,
+    frame: Option<&[u8]>,
+    status: &str,
 ) -> Result<AnalysisEvent> {
     let row = sqlx::query_as!(
         AnalysisEvent,
         r#"INSERT INTO analysis_events
-               (id, stream_id, captured_at, description, events, risk_level)
-           VALUES ($1, $2, $3, $4, $5, $6)
+               (id, stream_id, captured_at, description, events, risk_level, title, frame, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            RETURNING id, stream_id, captured_at, description,
-                     events, risk_level, raw_response, created_at"#,
+                     events, risk_level, raw_response, title, frame, status, created_at"#,
         id,
         stream_id,
         captured_at,
         description,
         events,
         risk_level,
+        title,
+        frame,
+        status,
     )
     .fetch_one(db)
     .await?;
@@ -177,7 +183,7 @@ pub async fn list_events(db: &PgPool, query: &EventQuery) -> Result<Vec<Analysis
     // sqlx doesn't support fully dynamic queries with query_as!, so we use
     // QueryBuilder for optional filters.
     let mut qb = sqlx::QueryBuilder::new(
-        "SELECT id, stream_id, captured_at, description, events, risk_level, raw_response, created_at FROM analysis_events WHERE 1=1",
+        "SELECT id, stream_id, captured_at, description, events, risk_level, raw_response, title, frame, status, created_at FROM analysis_events WHERE 1=1",
     );
 
     if let Some(sid) = query.stream_id {
@@ -211,7 +217,7 @@ pub async fn get_event(db: &PgPool, id: Uuid) -> Result<AnalysisEvent> {
     sqlx::query_as!(
         AnalysisEvent,
         r#"SELECT id, stream_id, captured_at, description,
-                  events, risk_level, raw_response, created_at
+                  events, risk_level, raw_response, title, frame, status, created_at
            FROM analysis_events WHERE id = $1"#,
         id
     )

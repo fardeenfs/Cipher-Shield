@@ -72,6 +72,9 @@ pub struct AnalysisEvent {
     pub events: Value,
     pub risk_level: String,
     pub raw_response: Option<String>,
+    pub title: Option<String>,
+    pub frame: Option<Vec<u8>>,
+    pub status: String,
     pub created_at: DateTime<Utc>,
 }
 

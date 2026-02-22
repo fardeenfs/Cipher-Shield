@@ -15,6 +15,9 @@ use crate::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisResult {
+    /// Short title (max 4 words) from the VLM.
+    #[serde(default)]
+    pub title: Option<String>,
     pub description: String,
     pub events: Vec<DetectedEvent>,
     pub risk_level: RiskLevel,
@@ -51,6 +54,7 @@ pub const SYSTEM_PROMPT: &str = r#"You are a security camera analysis AI.
 Analyze the provided camera frame and respond ONLY with a valid JSON object using this exact schema:
 
 {
+  "title": "Short title (max 4 words) that describes what you actually see as the security concern in THIS image. Invent the title from the scene—do not copy the examples. Focus on the threatening action, object, or behavior (e.g. weapon, fire, intrusion, suspicious object). Do not use generic scene names like 'kitchen' or 'office'.",
   "description": "Brief natural language description of the scene",
   "events": [
     {
@@ -133,6 +137,7 @@ pub fn parse_or_fallback(raw: &str) -> AnalysisResult {
         .trim();
 
     serde_json::from_str(cleaned).unwrap_or_else(|_| AnalysisResult {
+        title: None,
         description: raw.to_string(),
         events: vec![],
         risk_level: RiskLevel::None,
