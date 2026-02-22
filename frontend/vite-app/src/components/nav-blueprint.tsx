@@ -120,7 +120,7 @@ export function NavBlueprint() {
         </div>
         <SidebarGroup className="px-0 py-0">
           <ScrollBlur className="max-h-50">
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-2 pb-24">
           {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading blueprints...</div>}
           {!isLoading && filteredBlueprints.length === 0 && (
              <div className="p-4 text-center text-xs text-muted-foreground">No blueprints match your search.</div>

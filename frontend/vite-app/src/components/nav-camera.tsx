@@ -204,7 +204,7 @@ function CameraList({
   return (
     <SidebarGroup className="px-0 py-0">
           <ScrollBlur className="max-h-50">
-        <SidebarMenu className="space-y-2 pb-4">
+        <SidebarMenu className="space-y-2 pb-24">
       {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading cameras...</div>}
       {!isLoading && cameras.length === 0 && (
          <div className="p-4 text-center text-xs text-muted-foreground">No cameras found.</div>
