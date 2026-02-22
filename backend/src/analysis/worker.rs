@@ -104,6 +104,10 @@ async fn process_frame(
     };
 
     let events_json = serde_json::to_value(&result.events)?;
+    let title: Option<&str> = result.title.as_deref().and_then(|s| {
+        let t = s.trim();
+        if t.is_empty() { None } else { Some(t) }
+    });
 
     // Persist to DB
     let event = db::insert_event(
@@ -114,6 +118,9 @@ async fn process_frame(
         &result.description,
         events_json,
         risk_str,
+        title,
+        Some(&frame.data),
+        "unresolved",
     )
     .await?;
 
