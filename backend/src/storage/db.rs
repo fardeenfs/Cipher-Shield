@@ -15,30 +15,18 @@ use crate::{
 // ─── Streams ──────────────────────────────────────────────────────────────────
 
 pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec<Stream>> {
-    let rows = match blueprint_id {
-        Some(bid) => sqlx::query_as!(
-            Stream,
-            r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                      enabled, position_x, position_y, rotation, phone_number,
-                      blueprint_id, created_at, updated_at
-               FROM streams
-               WHERE blueprint_id = $1
-               ORDER BY created_at ASC"#,
-            bid
-        )
-        .fetch_all(db)
-        .await?,
-        None => sqlx::query_as!(
-            Stream,
-            r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                      enabled, position_x, position_y, rotation, phone_number,
-                      blueprint_id, created_at, updated_at
-               FROM streams
-               ORDER BY created_at ASC"#
-        )
-        .fetch_all(db)
-        .await?,
-    };
+    let mut qb = sqlx::QueryBuilder::new(
+        "SELECT id, name, source_type, source_url, capture_interval_sec, \
+                enabled, position_x, position_y, rotation, phone_number, \
+                blueprint_id, created_at, updated_at \
+         FROM streams WHERE 1=1",
+    );
+    if let Some(bid) = blueprint_id {
+        qb.push(" AND blueprint_id = ").push_bind(bid);
+    }
+    qb.push(" ORDER BY created_at ASC");
+
+    let rows = qb.build_query_as::<Stream>().fetch_all(db).await?;
     Ok(rows)
 }
 

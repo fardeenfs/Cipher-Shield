@@ -93,7 +93,7 @@ export function AddCameraDialog() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <HugeiconsIcon icon={Camera01Icon} size={20} />
-              Add New Stream
+              Add Camera
             </DialogTitle>
             <DialogDescription>
               Configure the connection details for your camera stream.

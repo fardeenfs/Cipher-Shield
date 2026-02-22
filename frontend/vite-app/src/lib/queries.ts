@@ -3,7 +3,7 @@ import {
   mutationOptions,
   type QueryClient,
 } from "@tanstack/react-query";
-import { type ListEventsParams, api } from "./services";
+import { type ListEventsParams, api, type CreateRuleRequest, type UpdateRuleRequest, type UpdateBlueprintRequest } from "./services";
 
 // ==========================================
 // QUERY KEYS
@@ -18,6 +18,13 @@ export const queryKeys = {
     details: () => [...queryKeys.events.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.events.details(), id] as const,
   },
+  blueprints: {
+    all: ["blueprints"] as const,
+    lists: () => [...queryKeys.blueprints.all, "list"] as const,
+    list: () => [...queryKeys.blueprints.lists()] as const,
+    details: () => [...queryKeys.blueprints.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.blueprints.details(), id] as const,
+  },
   streams: {
     all: ["streams"] as const,
     lists: () => [...queryKeys.streams.all, "list"] as const,
@@ -25,6 +32,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.streams.details(), id] as const,
     snapshots: () => [...queryKeys.streams.all, "snapshot"] as const,
     snapshot: (id: string) => [...queryKeys.streams.snapshots(), id] as const,
+    rules: (streamId: string) => [...queryKeys.streams.detail(streamId), "rules"] as const,
   },
 };
 
@@ -53,10 +61,10 @@ export const eventsQueries = {
 };
 
 export const streamsQueries = {
-  list: () =>
+  list: (blueprint_id?: string) =>
     queryOptions({
-      queryKey: queryKeys.streams.lists(),
-      queryFn: api.listStreams,
+      queryKey: [...queryKeys.streams.lists(), { blueprint_id }] as const,
+      queryFn: () => api.listStreams(blueprint_id),
     }),
   detail: (id: string) =>
     queryOptions({
@@ -70,6 +78,29 @@ export const streamsQueries = {
       queryFn: () => api.getSnapshot(id),
       enabled: !!id,
       staleTime: 0,
+    }),
+};
+
+export const blueprintsQueries = {
+  list: () =>
+    queryOptions({
+      queryKey: queryKeys.blueprints.list(),
+      queryFn: api.listBlueprints,
+    }),
+  detail: (id: string) =>
+    queryOptions({
+      queryKey: queryKeys.blueprints.detail(id),
+      queryFn: () => api.getBlueprint(id),
+      enabled: !!id,
+    }),
+};
+
+export const rulesQueries = {
+  list: (streamId: string) =>
+    queryOptions({
+      queryKey: queryKeys.streams.rules(streamId),
+      queryFn: () => api.listRules(streamId),
+      enabled: !!streamId,
     }),
 };
 
@@ -120,5 +151,68 @@ export const streamsMutations = {
         queryClient.invalidateQueries({ queryKey: queryKeys.streams.lists() });
         queryClient.setQueryData(queryKeys.streams.detail(id), data);
       },
+    }),
+};
+
+export const rulesMutations = {
+  create: (queryClient: QueryClient, streamId: string) =>
+    mutationOptions({
+      mutationFn: (payload: CreateRuleRequest) => api.createRule({ streamId, payload }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.streams.rules(streamId) });
+      },
+    }),
+
+  update: (queryClient: QueryClient, streamId: string) =>
+    mutationOptions({
+      mutationFn: ({ ruleId, payload }: { ruleId: string; payload: UpdateRuleRequest }) =>
+        api.updateRule({ streamId, ruleId, payload }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.streams.rules(streamId) });
+      },
+    }),
+
+  delete: (queryClient: QueryClient, streamId: string) =>
+    mutationOptions({
+      mutationFn: (ruleId: string) => api.deleteRule({ streamId, ruleId }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.streams.rules(streamId) });
+      },
+    }),
+};
+
+export const blueprintsMutations = {
+  create: (queryClient: QueryClient) =>
+    mutationOptions({
+      mutationFn: api.createBlueprint,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.blueprints.lists() });
+      },
+    }),
+
+  update: (queryClient: QueryClient) =>
+    mutationOptions({
+      mutationFn: ({ id, payload }: { id: string; payload: UpdateBlueprintRequest }) =>
+        api.updateBlueprint({ id, payload }),
+      onSuccess: (data, variables) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.blueprints.lists() });
+        queryClient.setQueryData(queryKeys.blueprints.detail(variables.id), data);
+      },
+    }),
+
+  delete: (queryClient: QueryClient) =>
+    mutationOptions({
+      mutationFn: api.deleteBlueprint,
+      onSuccess: (_, id) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.blueprints.lists() });
+        queryClient.removeQueries({ queryKey: queryKeys.blueprints.detail(id) });
+      },
+    }),
+};
+
+export const notificationsMutations = {
+  testTwilio: () =>
+    mutationOptions({
+      mutationFn: api.testTwilioAlert,
     }),
 };

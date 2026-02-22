@@ -1,5 +1,30 @@
 import axios from "axios";
 
+export interface BlueprintSummary {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlueprintResponse {
+  id: string;
+  name: string;
+  image_base64?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBlueprintRequest {
+  name?: string | null;
+  image_base64?: string | null;
+}
+
+export interface UpdateBlueprintRequest {
+  name?: string | null;
+  image_base64?: string | null;
+}
+
 export interface AnalysisEvent {
   id: string;
   stream_id: string;
@@ -17,6 +42,7 @@ export interface CreateStreamRequest {
   source_url: string;
   capture_interval_sec?: number;
   enabled?: boolean;
+  blueprint_id?: string | null;
 }
 
 export interface Stream {
@@ -26,6 +52,11 @@ export interface Stream {
   source_url: string;
   capture_interval_sec: number;
   enabled: boolean;
+  blueprint_id?: string | null;
+  phone_number?: string | null;
+  position_x: number;
+  position_y: number;
+  rotation: number;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +67,33 @@ export interface UpdateStreamRequest {
   name?: string | null;
   source_type?: string | null;
   source_url?: string | null;
+  blueprint_id?: string | null;
+  phone_number?: string | null;
+  position_x?: number | null;
+  position_y?: number | null;
+  rotation?: number | null;
+}
+
+export interface StreamRule {
+  id: string;
+  stream_id: string;
+  description: string;
+  threat_level: "none" | "low" | "medium" | "high";
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateRuleRequest {
+  description: string;
+  threat_level: "none" | "low" | "medium" | "high";
+  position?: number;
+}
+
+export interface UpdateRuleRequest {
+  description?: string | null;
+  threat_level?: string | null;
+  position?: number | null;
 }
 
 // Custom interface for list_events query parameters
@@ -74,9 +132,34 @@ export const api = {
     return data;
   },
 
+  // --- BLUEPRINTS ---
+  listBlueprints: async (): Promise<BlueprintSummary[]> => {
+    const { data } = await apiClient.get("/blueprints");
+    return data;
+  },
+
+  createBlueprint: async (payload: CreateBlueprintRequest): Promise<BlueprintResponse> => {
+    const { data } = await apiClient.post("/blueprints", payload);
+    return data;
+  },
+
+  getBlueprint: async (id: string): Promise<BlueprintResponse> => {
+    const { data } = await apiClient.get(`/blueprints/${id}`);
+    return data;
+  },
+
+  updateBlueprint: async ({ id, payload }: { id: string, payload: UpdateBlueprintRequest }): Promise<BlueprintResponse> => {
+    const { data } = await apiClient.put(`/blueprints/${id}`, payload);
+    return data;
+  },
+
+  deleteBlueprint: async (id: string): Promise<void> => {
+    await apiClient.delete(`/blueprints/${id}`);
+  },
+
   // --- STREAMS ---
-  listStreams: async (): Promise<Stream[]> => {
-    const { data } = await apiClient.get("/streams");
+  listStreams: async (blueprint_id?: string): Promise<Stream[]> => {
+    const { data } = await apiClient.get("/streams", { params: { blueprint_id } });
     return data;
   },
 
@@ -125,5 +208,31 @@ export const api = {
   // Helper for MJPEG live stream <img src={api.getLiveStreamUrl(id)} />
   getLiveStreamUrl: (id: string): string => {
     return `/api/streams/${id}/live`;
+  },
+
+  // --- RULES ---
+  listRules: async (streamId: string): Promise<StreamRule[]> => {
+    const { data } = await apiClient.get(`/streams/${streamId}/rules`);
+    return data;
+  },
+
+  createRule: async ({ streamId, payload }: { streamId: string, payload: CreateRuleRequest }): Promise<StreamRule> => {
+    const { data } = await apiClient.post(`/streams/${streamId}/rules`, payload);
+    return data;
+  },
+
+  updateRule: async ({ streamId, ruleId, payload }: { streamId: string, ruleId: string, payload: UpdateRuleRequest }): Promise<StreamRule> => {
+    const { data } = await apiClient.put(`/streams/${streamId}/rules/${ruleId}`, payload);
+    return data;
+  },
+
+  deleteRule: async ({ streamId, ruleId }: { streamId: string, ruleId: string }): Promise<void> => {
+    await apiClient.delete(`/streams/${streamId}/rules/${ruleId}`);
+  },
+
+  // --- NOTIFICATIONS ---
+  testTwilioAlert: async (): Promise<{ message: string }> => {
+    const { data } = await apiClient.post("/test-twilio");
+    return data;
   },
 };

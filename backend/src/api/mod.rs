@@ -5,7 +5,7 @@ pub mod ws;
 use std::sync::Arc;
 
 use axum::{
-    routing::{delete, get, post, put},
+    routing::{get, post, put},
     Router,
 };
 use tower_http::{cors::CorsLayer, trace::TraceLayer};

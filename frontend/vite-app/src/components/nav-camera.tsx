@@ -131,11 +131,11 @@ export function NavCamera() {
                   <div className="flex items-center gap-3">
                     <ItemMedia variant="image">
                       <img
-                        src={`http://localhost:8080/api/streams/${camera.id}/snapshot`}
+                        src={`http://localhost:8080/api/streams/${camera.id}/live`}
                         alt={camera.name}
                         width={32}
                         height={32}
-                        className="object-cover grayscale rounded-md"
+                        className="object-cover grayscale rounded-none"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = `https://avatar.vercel.sh/${camera.id}`;
                         }}
@@ -147,7 +147,7 @@ export function NavCamera() {
                         <Link
                           to="/stream/$id"
                           params={{ id: camera.id }}
-                          className="font-medium hover:underline hover:decoration-foreground hover:decoration-2 underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                          className="font-medium hover:underline hover:decoration-foreground hover:decoration-2 underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-none"
                         >
                           {camera.name}
                         </Link>
@@ -176,7 +176,7 @@ export function NavCamera() {
                     </SidebarMenuAction>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    className="w-56 rounded-lg"
+                    className="w-56"
                     side={isMobile ? "bottom" : "right"}
                     align={isMobile ? "end" : "start"}
                   >
