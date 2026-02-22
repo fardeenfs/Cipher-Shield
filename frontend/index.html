@@ -466,6 +466,129 @@
     #toast.show { opacity: 1; transform: translateY(0); }
     #toast.ok  { border-left: 3px solid var(--low); }
     #toast.err { border-left: 3px solid var(--high); }
+
+    /* ── Stream Rules ─────────────────────────────────────────────── */
+    .btn-rules { background: #1a1e3a; color: var(--accent); border: 1px solid #2a3050; }
+    .btn-rules.open { background: #1a2a4a; border-color: var(--accent); }
+
+    .rules-panel {
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 7px;
+      background: var(--surface);
+      border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+
+    .rule-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .rule-none   { background: #1e2030; color: var(--none); }
+    .rule-low    { background: #0f2a1e; color: var(--low); }
+    .rule-medium { background: #2a1e0a; color: var(--medium); }
+    .rule-high   { background: #2a0f0f; color: var(--high); }
+
+    .rule-desc {
+      flex: 1;
+      font-size: 11px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rule-btns { display: flex; gap: 3px; flex-shrink: 0; }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 1;
+      padding: 2px 5px;
+      transition: all .15s;
+    }
+    .btn-icon:hover     { color: var(--text); border-color: var(--text); }
+    .btn-icon.del:hover { color: var(--high); border-color: var(--high); }
+
+    .rule-edit-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      width: 100%;
+    }
+    .rule-edit-row input, .rule-edit-row select {
+      background: var(--bg);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--bright);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 3px 6px;
+      outline: none;
+    }
+    .rule-edit-row input { flex: 1; min-width: 0; }
+    .btn-save   { background: var(--low); border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 10px; font-weight: 600; padding: 3px 7px; }
+    .btn-cancel { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); cursor: pointer; font-size: 10px; padding: 3px 7px; }
+
+    .rules-empty { font-size: 11px; color: var(--muted); text-align: center; padding: 4px 0 8px; }
+
+    .add-rule-form {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding-top: 4px;
+    }
+    .add-rule-form input, .add-rule-form select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--bright);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 4px 7px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .add-rule-form input { flex: 1; min-width: 0; }
+    .add-rule-form input:focus, .add-rule-form select:focus { border-color: var(--accent); }
+    .add-rule-form input::placeholder { color: var(--muted); }
+    .add-rule-form .sel-level { width: 72px; }
+    .btn-add-rule {
+      background: var(--accent);
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 9px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-add-rule:hover { opacity: .85; }
   </style>
 </head>
 <body>
@@ -577,6 +700,7 @@
   let streams       = [];
   let liveEvents    = [];
   let activeFilters = new Set();  // empty = show all
+  let openRulePanels = new Set(); // stream ids whose rules panel is open
 
   // ── WebSocket ────────────────────────────────────────────────────────────
   let ws, wsReconnectTimer;
@@ -736,20 +860,48 @@
     list.innerHTML = streams.map(s => `
       <div class="stream-card" id="sc-${s.id}">
         <div class="sc-top">
-          <span class="sc-name" title="${s.name}">${s.name}</span>
-          <span class="sc-type">${s.source_type}</span>
+          <span class="sc-name" title="${htmlEsc(s.name)}">${htmlEsc(s.name)}</span>
+          <span class="sc-type">${htmlEsc(s.source_type)}</span>
         </div>
-        <div class="sc-meta" title="${s.source_url}">${s.source_url}</div>
+        <div class="sc-meta" title="${htmlEsc(s.source_url)}">${htmlEsc(s.source_url)}</div>
         <div class="sc-meta">Every ${s.capture_interval_sec}s</div>
         <div class="sc-actions">
           <button class="btn btn-sm btn-toggle ${s.enabled ? '' : 'off'}"
                   onclick="toggleStream('${s.id}', ${s.enabled})">
             ${s.enabled ? 'Enabled' : 'Disabled'}
           </button>
+          <button class="btn btn-sm btn-rules" id="rbtn-${s.id}"
+                  onclick="toggleRulesPanel('${s.id}')">Rules</button>
           <button class="btn btn-sm btn-danger" onclick="deleteStream('${s.id}')">Delete</button>
+        </div>
+        <div class="rules-panel" id="rules-${s.id}" style="display:none">
+          <div class="rules-list" id="rules-list-${s.id}"></div>
+          <div class="add-rule-form">
+            <input id="rule-desc-${s.id}" type="text" placeholder="Rule description…" />
+            <select id="rule-level-${s.id}" class="sel-level">
+              <option value="none">None</option>
+              <option value="low" selected>Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <button class="btn-add-rule" onclick="addRule('${s.id}')">+ Add</button>
+          </div>
         </div>
       </div>
     `).join('');
+
+    // Reopen panels that were open before the list re-rendered
+    openRulePanels.forEach(id => {
+      const panel = document.getElementById(`rules-${id}`);
+      const btn   = document.getElementById(`rbtn-${id}`);
+      if (panel) {
+        panel.style.display = 'block';
+        btn?.classList.add('open');
+        loadRules(id);
+      } else {
+        openRulePanels.delete(id);
+      }
+    });
   }
 
   function syncHistoryStreamFilter() {
@@ -807,6 +959,136 @@
     }
   }
 
+  // ── Stream Rules ──────────────────────────────────────────────────────────
+  // Cache of rules per stream id to avoid re-fetch when switching edit modes
+  const rulesCache = {};
+
+  async function toggleRulesPanel(streamId) {
+    const panel = document.getElementById(`rules-${streamId}`);
+    const btn   = document.getElementById(`rbtn-${streamId}`);
+    if (openRulePanels.has(streamId)) {
+      openRulePanels.delete(streamId);
+      panel.style.display = 'none';
+      btn.classList.remove('open');
+    } else {
+      openRulePanels.add(streamId);
+      panel.style.display = 'block';
+      btn.classList.add('open');
+      await loadRules(streamId);
+    }
+  }
+
+  async function loadRules(streamId) {
+    try {
+      const res = await fetch(`${API}/api/streams/${streamId}/rules`);
+      if (!res.ok) throw new Error(await res.text());
+      const rules = await res.json();
+      rulesCache[streamId] = rules;
+      renderRules(streamId, rules);
+    } catch (e) {
+      toast('Failed to load rules', 'err');
+    }
+  }
+
+  function renderRules(streamId, rules) {
+    const list = document.getElementById(`rules-list-${streamId}`);
+    if (!list) return;
+    if (!rules.length) {
+      list.innerHTML = '<div class="rules-empty">No rules yet — add one below</div>';
+      return;
+    }
+    list.innerHTML = rules.map(r => `
+      <div class="rule-item" id="ri-${r.id}">
+        <span class="rule-badge rule-${r.threat_level}">${htmlEsc(r.threat_level)}</span>
+        <span class="rule-desc" title="${htmlEsc(r.description)}">${htmlEsc(r.description)}</span>
+        <div class="rule-btns">
+          <button class="btn-icon" title="Edit"
+                  onclick="startEditRule('${streamId}','${r.id}')">&#9998;</button>
+          <button class="btn-icon del" title="Delete"
+                  onclick="deleteRule('${streamId}','${r.id}')">&#x2715;</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function startEditRule(streamId, ruleId) {
+    const rules = rulesCache[streamId] || [];
+    const r = rules.find(x => x.id === ruleId);
+    if (!r) return;
+    const item = document.getElementById(`ri-${ruleId}`);
+    if (!item) return;
+
+    item.innerHTML = `
+      <div class="rule-edit-row">
+        <input id="ed-desc-${ruleId}" type="text" value="${htmlEsc(r.description)}" />
+        <select id="ed-level-${ruleId}">
+          <option value="none"   ${r.threat_level==='none'  ?'selected':''}>None</option>
+          <option value="low"    ${r.threat_level==='low'   ?'selected':''}>Low</option>
+          <option value="medium" ${r.threat_level==='medium'?'selected':''}>Medium</option>
+          <option value="high"   ${r.threat_level==='high'  ?'selected':''}>High</option>
+        </select>
+        <button class="btn-save"   onclick="saveRule('${streamId}','${ruleId}',${r.position})">Save</button>
+        <button class="btn-cancel" onclick="renderRules('${streamId}', rulesCache['${streamId}'] || [])">Cancel</button>
+      </div>
+    `;
+    document.getElementById(`ed-desc-${ruleId}`).focus();
+  }
+
+  async function saveRule(streamId, ruleId, position) {
+    const desc  = document.getElementById(`ed-desc-${ruleId}`)?.value.trim();
+    const level = document.getElementById(`ed-level-${ruleId}`)?.value;
+    if (!desc) { toast('Description is required', 'err'); return; }
+    try {
+      const res = await fetch(`${API}/api/streams/${streamId}/rules/${ruleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: desc, threat_level: level, position }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast('Rule updated', 'ok');
+      await loadRules(streamId);
+    } catch (e) {
+      toast('Failed: ' + e.message, 'err');
+    }
+  }
+
+  async function deleteRule(streamId, ruleId) {
+    try {
+      const res = await fetch(`${API}/api/streams/${streamId}/rules/${ruleId}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error(await res.text());
+      toast('Rule deleted', 'ok');
+      await loadRules(streamId);
+    } catch (e) {
+      toast('Failed: ' + e.message, 'err');
+    }
+  }
+
+  async function addRule(streamId) {
+    const descEl  = document.getElementById(`rule-desc-${streamId}`);
+    const levelEl = document.getElementById(`rule-level-${streamId}`);
+    const desc    = descEl.value.trim();
+    const level   = levelEl.value;
+    if (!desc) { toast('Rule description is required', 'err'); descEl.focus(); return; }
+
+    const existing = rulesCache[streamId] || [];
+    const position = existing.length; // append at end
+
+    try {
+      const res = await fetch(`${API}/api/streams/${streamId}/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: desc, threat_level: level, position }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      descEl.value = '';
+      levelEl.value = 'low';
+      toast('Rule added', 'ok');
+      await loadRules(streamId);
+    } catch (e) {
+      toast('Failed: ' + e.message, 'err');
+    }
+  }
+
   // ── History ───────────────────────────────────────────────────────────────
   async function loadHistory() {
     const streamId = document.getElementById('hStream').value;
@@ -849,6 +1131,15 @@
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+  function htmlEsc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function fmt(s) {
     return (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }

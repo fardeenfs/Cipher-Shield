@@ -87,72 +87,6 @@ const activeRules = [
     description: "Alert if a person walks behind the service counter.",
   },
 ];
-// This is sample data.
-const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: <HugeiconsIcon icon={AudioWave01Icon} strokeWidth={2} />,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />,
-      plan: "Free",
-    },
-  ],
-
-  navSecondary: [
-    {
-      title: "Calendar",
-      url: "#",
-      icon: <HugeiconsIcon icon={CalendarIcon} strokeWidth={2} />,
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />,
-    },
-    {
-      title: "Templates",
-      url: "#",
-      icon: <HugeiconsIcon icon={CubeIcon} strokeWidth={2} />,
-    },
-    {
-      title: "Trash",
-      url: "#",
-      icon: <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />,
-    },
-    {
-      title: "Help",
-      url: "#",
-      icon: <HugeiconsIcon icon={MessageQuestionIcon} strokeWidth={2} />,
-    },
-  ],
-  cameras: [
-    {
-      name: "Camera 1",
-      description: "Some description",
-    },
-    {
-      name: "Camera 2",
-      description: "Some description",
-    },
-    {
-      name: "Camera 3",
-      description: "Some description",
-    },
-    {
-      name: "Camera 4",
-      description: "Some description",
-    },
-  ],
-};
 
 export function SidebarLeft({
   ...props
@@ -179,7 +113,7 @@ export function SidebarLeft({
         <>
           <SidebarHeader className="gap-4 border-sidebar-border h-14 border-b"></SidebarHeader>
           <SidebarContent className="gap-4">
-            <NavCamera cameras={data.cameras} />
+            <NavCamera />
             {/* <NavPrompts prompts={prompts} /> */}
           </SidebarContent>
           <SidebarRail />
