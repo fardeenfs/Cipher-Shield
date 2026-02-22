@@ -75,7 +75,7 @@ export function UploadBlueprintDialog() {
         <DialogHeader>
           <DialogTitle>File Upload</DialogTitle>
           <DialogDescription>
-            Upload a blueprint image to use as the background for the floorplan.
+            Upload a floor plan image to map your cameras and simulate spatial boundaries.
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-center w-full">

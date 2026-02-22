@@ -20,7 +20,6 @@ import {
   PlayIcon,
   Unlink01Icon,
 } from "@hugeicons/core-free-icons";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
   DropdownMenu,
@@ -358,7 +357,7 @@ function CameraList({
                     <HugeiconsIcon
                       icon={Delete02Icon}
                       strokeWidth={2}
-                      className="text-muted-foreground text-destructive"
+                      className="text-destructive"
                     />
                     <span className="text-destructive">Delete</span>
                   </DropdownMenuItem>
@@ -370,7 +369,7 @@ function CameraList({
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete the stream "{camera.name}" from our servers. This action cannot be undone.
+                  This will permanently delete the stream "{camera.name}". This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

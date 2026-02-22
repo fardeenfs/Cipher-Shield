@@ -78,7 +78,7 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
           <CardHeader className="p-5 pb-6">
             <CardTitle className="flex items-center gap-3">
               <div className={cn("size-2.5 ", indicatorClasses)} />
-              All Alerts
+              Event Stream
               <Badge variant="outline" className="ml-auto">{validEvents.length}</Badge>
             </CardTitle>
           </CardHeader>
@@ -92,7 +92,7 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
                 />
                 <Input 
                   type="search" 
-                  placeholder="Search alerts..." 
+                  placeholder="Search events..." 
                   className="pl-9 w-full" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
