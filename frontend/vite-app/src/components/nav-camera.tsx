@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import * as motion from "motion/react-client";
+import type { Variants } from "motion/react";
 import {
   SidebarGroup,
   SidebarMenu,
@@ -54,6 +56,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AddCameraDialog } from "./add-camera-dialog";
+
+const cardVariants: Variants = {
+  offscreen: {
+    scale: 0.90,
+    opacity: 0.90,
+  },
+  onscreen: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      bounce: 0.4,
+      duration: 0.8,
+    },
+  },
+};
 
 export function NavCamera() {
   const queryClient = useQueryClient();
@@ -186,7 +204,7 @@ function CameraList({
 }: any) {
   return (
     <SidebarGroup className="px-0 py-0">
-      <ScrollBlur className="max-h-100">
+          <ScrollBlur className="max-h-50">
         <SidebarMenu className="space-y-2 pb-4">
       {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading cameras...</div>}
       {!isLoading && cameras.length === 0 && (
@@ -194,8 +212,15 @@ function CameraList({
       )}
       {cameras.map((camera: Stream) => {
         return (
-        <SidebarMenuItem key={camera.id}>
-          <AlertDialog>
+        <motion.div
+          key={camera.id}
+          initial="offscreen"
+          whileInView="onscreen"
+          viewport={{ amount: "some" }}
+          variants={cardVariants}
+        >
+          <SidebarMenuItem>
+            <AlertDialog>
             <Item
               draggable // Enable native dragging
               onDragStart={(e) => onDragStart(e, camera)}
@@ -245,8 +270,8 @@ function CameraList({
 
                     {/* Pulse */}
                     <span className="relative flex h-2 w-2 shrink-0">
-                      <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-60", camera.enabled ? "bg-primary" : "bg-destructive")}></span>
-                      <span className={cn("relative inline-flex rounded-full h-2 w-2", camera.enabled ? "bg-primary shadow-[0_0_8px_var(--color-primary)]" : "bg-destructive shadow-[0_0_8px_var(--color-destructive)]")}></span>
+                      <span className={cn("animate-ping absolute inline-flex h-full w-full  opacity-60", camera.enabled ? "bg-primary" : "bg-destructive")}></span>
+                      <span className={cn("relative inline-flex  h-2 w-2", camera.enabled ? "bg-primary shadow-[0_0_8px_var(--color-primary)]" : "bg-destructive shadow-[0_0_8px_var(--color-destructive)]")}></span>
                     </span>
                   </ItemTitle>
 
@@ -360,7 +385,9 @@ function CameraList({
             </AlertDialogContent>
           </AlertDialog>
         </SidebarMenuItem>
-      )})}
+        </motion.div>
+      );
+      })}
     </SidebarMenu>
   </ScrollBlur>
 </SidebarGroup>

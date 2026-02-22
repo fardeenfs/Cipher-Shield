@@ -54,7 +54,10 @@ export function SidebarRight({
       className="sticky top-0 hidden h-svh border-l lg:flex w-85"
       {...props}
     >
-      <SidebarHeader className="border-sidebar-border h-14 border-b"></SidebarHeader>
+      <SidebarHeader className="border-sidebar-border h-14 ">
+
+ 
+      </SidebarHeader>
       <SidebarContent className="p-2.5">
         <DatePicker />
        <RightSidePanelAlerts events={events} activeEvents={activeEvents} resolvedEvents={resolvedEvents} /> 

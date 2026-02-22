@@ -20,12 +20,15 @@ function RootComponent() {
       <NuqsAdapter>
       <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex h-screen w-full flex-col overflow-hidden bg-background">
-          {/* <TopBar /> */}
+        <div className="flex h-screen w-full flex-col overflow-hidden bg-card">
+          
           <div className="relative flex-1 overflow-hidden">
             <SidebarProvider className="h-full min-h-full min-w-0">
               <SidebarLeft />
-              <SidebarInset className="flex h-full flex-col overflow-hidden">
+              <SidebarInset className="flex h-full flex-col overflow-hidden relative pt-14">
+                <div className="fixed top-0 right-0 z-100 transition-[left] duration-200 ease-linear left-[calc(var(--sidebar-width)+2.8rem)]">
+                  <TopBar />
+                </div>
                 <Outlet />
               </SidebarInset>
               <SidebarRight />

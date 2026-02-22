@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import * as motion from "motion/react-client";
+import type { Variants } from "motion/react";
 import {
   SidebarGroup,
   SidebarMenu,
@@ -49,6 +51,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { UploadBlueprintDialog } from "./upload-blueprint-dialog";
+
+const cardVariants: Variants = {
+  offscreen: {
+    scale: 0.90,
+    opacity: 0.90,
+  },
+  onscreen: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      bounce: 0.4,
+      duration: 0.8,
+    },
+  },
+};
 
 export function NavBlueprint() {
   const queryClient = useQueryClient();
@@ -101,7 +119,7 @@ export function NavBlueprint() {
           <UploadBlueprintDialog />
         </div>
         <SidebarGroup className="px-0 py-0">
-          <ScrollBlur className="max-h-100">
+          <ScrollBlur className="max-h-50">
             <SidebarMenu className="space-y-2">
           {isLoading && <div className="p-4 text-center text-sm text-muted-foreground">Loading blueprints...</div>}
           {!isLoading && filteredBlueprints.length === 0 && (
@@ -156,8 +174,14 @@ function BlueprintListItem({
     : `https://avatar.vercel.sh/${blueprint.id}`;
 
   return (
-    <SidebarMenuItem>
-      <AlertDialog>
+    <motion.div
+      initial="offscreen"
+      whileInView="onscreen"
+      viewport={{ amount: "some" }}
+      variants={cardVariants}
+    >
+      <SidebarMenuItem>
+        <AlertDialog>
         <Item
           variant="outline"
           onClick={onSelect}
@@ -255,5 +279,6 @@ function BlueprintListItem({
         </AlertDialogContent>
       </AlertDialog>
     </SidebarMenuItem>
+    </motion.div>
   );
 }

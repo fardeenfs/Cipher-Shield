@@ -1,3 +1,4 @@
+import { useQueryState } from "nuqs";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ScrollBlur } from "./scroll-blur";
@@ -6,6 +7,7 @@ import { TimelineItem, type TimelineEntry } from "./timeline-item";
 import { SidebarGroup, SidebarGroupContent } from "./ui/sidebar";
 import type { AnalysisEvent } from "@/lib/services";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
   // Helper to map API event to TimelineEntry
   const mapEventToEntry = (e: any): TimelineEntry => {
@@ -36,17 +38,30 @@ import { format } from "date-fns";
     };
   };
 
-
 export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {events:AnalysisEvent[] | undefined, activeEvents:AnalysisEvent[], resolvedEvents:AnalysisEvent[]}) {
-    const validEvents = events?.filter(e => e.risk_level?.toLowerCase() !== 'none') || [];
-    const validActive = activeEvents.filter(e => e.risk_level?.toLowerCase() !== 'none');
-    const validResolved = resolvedEvents.filter(e => e.risk_level?.toLowerCase() !== 'none');
+    const [alertFilter] = useQueryState("alertFilter", { defaultValue: "all" });
+
+    const filterByRisk = (e: AnalysisEvent) => {
+      const risk = e.risk_level?.toLowerCase() || 'none';
+      if (risk === 'none') return false;
+      if (alertFilter !== 'all' && risk !== alertFilter) return false;
+      return true;
+    };
+
+    const validEvents = events?.filter(filterByRisk) || [];
+    const validActive = activeEvents.filter(filterByRisk);
+    const validResolved = resolvedEvents.filter(filterByRisk);
+
+    const indicatorClasses = alertFilter === 'high' ? 'bg-destructive shadow-[0_0_8px_var(--destructive)]'
+                           : alertFilter === 'medium' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]'
+                           : alertFilter === 'low' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]'
+                           : 'bg-primary shadow-[0_0_8px_var(--primary)]';
 
     return (
         <Card size="sm">
           <CardHeader className="p-5 pb-6">
             <CardTitle className="flex items-center gap-3">
-              <div className="size-2.5 bg-destructive shadow-[0_0_5px_var(--destructive)]" />
+              <div className={cn("size-2.5 ", indicatorClasses)} />
               All Alerts
               <Badge variant="outline" className="ml-auto">{validEvents.length}</Badge>
             </CardTitle>
@@ -61,8 +76,8 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
 
                 <SidebarGroupContent>
                   <TabsContent value="active" className="mt-0">
-                    <ScrollBlur className="max-h-[calc(100vh-270px)]">
-                      <div className="relative w-full mt-4">
+                    <ScrollBlur className="max-h-[calc(100vh-200px)]">
+                      <div className="relative w-full mt-4 pb-44">
                         <div className="flex flex-col">
                           {validActive.length === 0 && (
                             <div className="pb-4 text-center text-xs text-muted-foreground">
@@ -84,7 +99,7 @@ export function RightSidePanelAlerts({events, activeEvents, resolvedEvents}: {ev
 
                   <TabsContent value="resolved" className="mt-0">
                     <ScrollBlur className="max-h-[calc(100vh-270px)]">
-                      <div className="relative w-full mt-4">
+                      <div className="relative w-full mt-4 pb-44">
                         <div className="flex flex-col">
                           {validResolved.length === 0 && (
                             <div className="pb-4 text-center text-xs text-muted-foreground">

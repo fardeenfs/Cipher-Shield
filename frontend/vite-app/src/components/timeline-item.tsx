@@ -72,7 +72,7 @@ export function TimelineItem({
                       : risk === 'medium' ? 'bg-amber-500' 
                       : risk === 'low' ? 'bg-green-500' : 'bg-muted';
                       
-  const badgeVariant = risk === 'high' ? 'destructive' : risk === 'medium' ? 'default' : 'secondary';
+  const badgeVariant = risk === 'high' ? 'destructive' : risk === 'medium' ? 'warning' : risk === 'low' ? 'success' : 'secondary';
 
   return (
     <motion.div
