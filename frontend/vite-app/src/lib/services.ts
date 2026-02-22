@@ -111,6 +111,14 @@ export interface ListEventsParams {
   offset?: number;
 }
 
+export interface AlertSettings {
+  alert_phone_number?: string | null;
+}
+
+export interface UpdateAlertSettings {
+  alert_phone_number?: string | null;
+}
+
 export const apiClient = axios.create({
   // MARK: BASEURL HERE
   baseURL: "http://localhost:8080/api",
@@ -240,7 +248,16 @@ export const api = {
     await apiClient.delete(`/streams/${streamId}/rules/${ruleId}`);
   },
 
-  // --- NOTIFICATIONS ---
+  // --- NOTIFICATIONS & SETTINGS ---
+  getAlertPhoneNumber: async (): Promise<AlertSettings> => {
+    const { data } = await apiClient.get("/alert-phone-number");
+    return data;
+  },
+
+  updateAlertPhoneNumber: async (payload: UpdateAlertSettings): Promise<void> => {
+    await apiClient.put("/alert-phone-number", payload);
+  },
+
   testTwilioAlert: async (): Promise<{ message: string }> => {
     const { data } = await apiClient.post("/test-twilio");
     return data;

@@ -16,7 +16,8 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { streamsQueries, streamsMutations } from "@/lib/queries";
+import { streamsQueries, streamsMutations, blueprintsQueries } from "@/lib/queries";
+import { useQueryState } from "nuqs";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -67,9 +68,20 @@ const FlowEditor = React.memo(() => {
   const { fitView, screenToFlowPosition } = useReactFlow();
   const queryClient = useQueryClient();
   const updateStreamMutation = useMutation(streamsMutations.update(queryClient));
-  const { data: streams } = useQuery(streamsQueries.list());
   
-  const [nodesInitialized, setNodesInitialized] = useState(false);
+  const { data: blueprintsList } = useQuery(blueprintsQueries.list());
+  const latestBlueprintId = blueprintsList
+    ?.slice()
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())?.[0]?.id;
+
+  const [selectedBlueprintId] = useQueryState("blueprint");
+  const targetBlueprintId = selectedBlueprintId || latestBlueprintId;
+
+  const { data: streams } = useQuery(
+    streamsQueries.list()
+  );
+  const [selectedCameraId, setSelectedCamera] = useQueryState("camera");
+  
   const [duplicateAlert, setDuplicateAlert] = useState<string | null>(null);
   const alertTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -86,8 +98,8 @@ const FlowEditor = React.memo(() => {
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
 
   useEffect(() => {
-    if (streams && !nodesInitialized) {
-      const placedStreams = streams.filter(s => Math.abs(s.position_x) > 0.01 || Math.abs(s.position_y) > 0.01);
+    if (streams && targetBlueprintId) {
+      const placedStreams = streams.filter(s => (Math.abs(s.position_x) > 0.01 || Math.abs(s.position_y) > 0.01) && s.blueprint_id === targetBlueprintId);
       const camNodes: Node[] = placedStreams.map(s => ({
         id: String(s.id),
         type: "cameraNode",
@@ -95,12 +107,12 @@ const FlowEditor = React.memo(() => {
         data: {
           label: s.name,
           rotation: s.rotation || 0,
+          isSelected: s.id === selectedCameraId,
         },
       }));
       setNodes([...initialNodes, ...camNodes]);
-      setNodesInitialized(true);
     }
-  }, [streams, nodesInitialized]);
+  }, [streams, targetBlueprintId]);
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
@@ -146,6 +158,7 @@ const FlowEditor = React.memo(() => {
         data: {
           label: cameraData.name,
           rotation: cameraData.rotation || 0,
+          isSelected: String(cameraData.id) === selectedCameraId,
         },
       };
 
@@ -156,10 +169,11 @@ const FlowEditor = React.memo(() => {
         payload: {
           position_x: position.x,
           position_y: position.y,
+          blueprint_id: targetBlueprintId || null,
         }
       });
     },
-    [screenToFlowPosition, nodes, updateStreamMutation],
+    [screenToFlowPosition, nodes, updateStreamMutation, targetBlueprintId],
   );
 
   const onNodeDragStop = useCallback(
@@ -198,6 +212,15 @@ const FlowEditor = React.memo(() => {
     setNodes((nds) => applyNodeChanges(nextChanges, nds));
   }, []);
 
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (node.type === "cameraNode") {
+        setSelectedCamera(node.id);
+      }
+    },
+    [setSelectedCamera]
+  );
+
   return (
     <div
       onDrop={onDrop}
@@ -211,6 +234,7 @@ const FlowEditor = React.memo(() => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
+        onNodeClick={onNodeClick}
         colorMode="dark"
         autoPanOnNodeDrag={false}
         onConnect={onConnect}

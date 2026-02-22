@@ -3,7 +3,7 @@ import {
   mutationOptions,
   type QueryClient,
 } from "@tanstack/react-query";
-import { type ListEventsParams, api, type CreateRuleRequest, type UpdateRuleRequest, type UpdateBlueprintRequest } from "./services";
+import { type ListEventsParams, api, type CreateRuleRequest, type UpdateRuleRequest, type UpdateBlueprintRequest, type UpdateAlertSettings } from "./services";
 
 // ==========================================
 // QUERY KEYS
@@ -33,6 +33,10 @@ export const queryKeys = {
     snapshots: () => [...queryKeys.streams.all, "snapshot"] as const,
     snapshot: (id: string) => [...queryKeys.streams.snapshots(), id] as const,
     rules: (streamId: string) => [...queryKeys.streams.detail(streamId), "rules"] as const,
+  },
+  settings: {
+    all: ["settings"] as const,
+    alertPhone: () => [...queryKeys.settings.all, "alertPhone"] as const,
   },
 };
 
@@ -72,10 +76,10 @@ export const eventsMutations = {
 };
 
 export const streamsQueries = {
-  list: (blueprint_id?: string) =>
+  list: () =>
     queryOptions({
-      queryKey: [...queryKeys.streams.lists(), { blueprint_id }] as const,
-      queryFn: () => api.listStreams(blueprint_id),
+      queryKey: [...queryKeys.streams.lists()] as const,
+      queryFn: () => api.listStreams(),
     }),
   detail: (id: string) =>
     queryOptions({
@@ -112,6 +116,14 @@ export const rulesQueries = {
       queryKey: queryKeys.streams.rules(streamId),
       queryFn: () => api.listRules(streamId),
       enabled: !!streamId,
+    }),
+};
+
+export const settingsQueries = {
+  alertPhone: () =>
+    queryOptions({
+      queryKey: queryKeys.settings.alertPhone(),
+      queryFn: api.getAlertPhoneNumber,
     }),
 };
 
@@ -217,6 +229,16 @@ export const blueprintsMutations = {
       onSuccess: (_, id) => {
         queryClient.invalidateQueries({ queryKey: queryKeys.blueprints.lists() });
         queryClient.removeQueries({ queryKey: queryKeys.blueprints.detail(id) });
+      },
+    }),
+};
+
+export const settingsMutations = {
+  updateAlertPhone: (queryClient: QueryClient) =>
+    mutationOptions({
+      mutationFn: api.updateAlertPhoneNumber,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.settings.alertPhone() });
       },
     }),
 };

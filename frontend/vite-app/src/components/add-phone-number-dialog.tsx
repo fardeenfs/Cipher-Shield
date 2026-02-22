@@ -15,20 +15,27 @@ import { Input } from "@/components/ui/input";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PlusSignIcon, Alert01Icon, SmartPhone01Icon } from "@hugeicons/core-free-icons";
 import { SidebarMenuButton } from "./ui/sidebar";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { streamsMutations } from "@/lib/queries";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { settingsMutations, settingsQueries } from "@/lib/queries";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useParams } from "@tanstack/react-router";
+import { useEffect } from "react";
 
-export function AddPhoneNumberDialog() {
-  const { id: streamId } = useParams({ from: "/stream/$id" });
+export function GlobalPhoneNumberDialog() {
   const [open, setOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [apiErrorMsg, setApiErrorMsg] = useState("");
 
   const queryClient = useQueryClient();
-  const updateStream = useMutation(streamsMutations.update(queryClient));
+  const updateAlertPhone = useMutation(settingsMutations.updateAlertPhone(queryClient));
+
+  const { data: alertSettings } = useQuery(settingsQueries.alertPhone());
+
+  useEffect(() => {
+    if (alertSettings?.alert_phone_number && !open) {
+      setPhoneNumber(alertSettings.alert_phone_number);
+    }
+  }, [alertSettings, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,17 +47,13 @@ export function AddPhoneNumberDialog() {
     }
 
     setErrorMsg("");
-    updateStream.mutate(
+    updateAlertPhone.mutate(
       {
-        id: streamId,
-        payload: {
-          phone_number: phoneNumber,
-        }
+        alert_phone_number: phoneNumber || null,
       },
       {
         onSuccess: () => {
           setOpen(false);
-          setPhoneNumber("");
           setApiErrorMsg("");
         },
         onError: (error) => {
@@ -66,7 +69,7 @@ export function AddPhoneNumberDialog() {
       <DialogTrigger asChild>
         <SidebarMenuButton>
           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          <span> Add Phone Number</span>
+          <span> Global Alert Number</span>
         </SidebarMenuButton>
       </DialogTrigger>
 
@@ -78,7 +81,7 @@ export function AddPhoneNumberDialog() {
               Notification Settings
             </DialogTitle>
             <DialogDescription>
-              Add a phone number to receive SMS alerts for this stream.
+              Set the global phone number to receive SMS alerts for high-risk events across all cameras.
             </DialogDescription>
           </DialogHeader>
 
@@ -103,7 +106,6 @@ export function AddPhoneNumberDialog() {
                   setPhoneNumber(e.target.value);
                   setErrorMsg("");
                 }}
-                required
                 aria-invalid={!!errorMsg}
               />
               {errorMsg && (
@@ -120,8 +122,8 @@ export function AddPhoneNumberDialog() {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={updateStream.isPending}>
-              {updateStream.isPending ? "Saving..." : "Save Number"}
+            <Button type="submit" disabled={updateAlertPhone.isPending}>
+              {updateAlertPhone.isPending ? "Saving..." : "Save Number"}
             </Button>
           </DialogFooter>
         </form>

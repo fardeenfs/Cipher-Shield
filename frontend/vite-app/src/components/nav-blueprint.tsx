@@ -177,12 +177,7 @@ function BlueprintListItem({
                 <span className="font-medium cursor-pointer">
                   {blueprint.name}
                 </span>
-                {isSelected && (
-                  <span className="relative flex h-2 w-2 shrink-0 ml-auto">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary shadow-[0_0_8px_var(--color-primary)]"></span>
-                  </span>
-                )}
+                
               </ItemTitle>
 
               <ItemDescription className="line-clamp-1 text-muted-foreground">

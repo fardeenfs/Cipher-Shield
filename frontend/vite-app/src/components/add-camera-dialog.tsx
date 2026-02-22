@@ -39,6 +39,8 @@ export function AddCameraDialog() {
   const { data: streams } = useQuery(streamsQueries.list());
   const createStream = useMutation(streamsMutations.create(queryClient));
 
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setApiErrorMsg("");
@@ -60,6 +62,7 @@ export function AddCameraDialog() {
         source_type: sourceType,
         source_url: sourceUrl,
         capture_interval_sec: parseInt(interval, 10) || 5,
+        blueprint_id: null,
       },
       {
         onSuccess: () => {

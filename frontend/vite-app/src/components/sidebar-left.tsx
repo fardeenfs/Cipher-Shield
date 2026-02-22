@@ -20,7 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { rulesQueries, streamsQueries } from "@/lib/queries";
 import { StreamActivityCard } from "./stream-activity-card";
 import { ActiveRulesCard } from "./active-rules-card";
-import { AddPhoneNumberDialog } from "./add-phone-number-dialog";
+import { GlobalPhoneNumberDialog } from "./add-phone-number-dialog";
 
 
 export function SidebarLeft({
@@ -56,7 +56,13 @@ export function SidebarLeft({
             {/* <NavPrompts prompts={prompts} /> */}
           </SidebarContent>
           <SidebarRail />
-          
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <GlobalPhoneNumberDialog />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
         </>
       );
     }
@@ -69,13 +75,6 @@ export function SidebarLeft({
             <StreamActivityCard streamId={streamId} />
             <ActiveRulesCard streamId={streamId} streamName={stream?.name || "Loading..."} rules={rules} isMobile={isMobile} />
           </SidebarContent>
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <AddPhoneNumberDialog />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
         </>
       );
     }

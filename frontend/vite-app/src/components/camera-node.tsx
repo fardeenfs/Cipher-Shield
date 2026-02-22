@@ -6,11 +6,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { streamsMutations } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 type CameraNodeData = {
   number: number;
   label?: string;
-  rotation?: number; // 1. Add rotation to your data type
+  rotation?: number; 
+  isSelected?: boolean;
 };
 
 type CameraNode = Node<CameraNodeData, "camera">;
@@ -92,7 +94,14 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full">
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            className={cn(
+              "rounded-full transition-all",
+              (selected || data.isSelected) && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+            )}
+          >
             <HugeiconsIcon icon={VideoCameraAiIcon} />
           </Button>
         </TooltipTrigger>
