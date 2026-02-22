@@ -7,6 +7,8 @@ import { SidebarLeft } from "@/components/sidebar-left";
 import { SidebarRight } from "@/components/sidebar-right";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { TopBar } from "@/components/top-bar";
+
 export const Route = createRootRoute({
   component: RootComponent,
 });
@@ -18,13 +20,18 @@ function RootComponent() {
       <NuqsAdapter>
       <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SidebarProvider>
-          <SidebarLeft />
-          <SidebarInset className="flex h-svh flex-col overflow-hidden">
-            <Outlet />
-          </SidebarInset>
-          <SidebarRight />
-        </SidebarProvider>
+        <div className="flex h-screen w-full flex-col overflow-hidden bg-background">
+          {/* <TopBar /> */}
+          <div className="relative flex-1 overflow-hidden">
+            <SidebarProvider className="h-full min-h-full min-w-0">
+              <SidebarLeft />
+              <SidebarInset className="flex h-full flex-col overflow-hidden">
+                <Outlet />
+              </SidebarInset>
+              <SidebarRight />
+            </SidebarProvider>
+          </div>
+        </div>
       </TooltipProvider>
       </QueryClientProvider>
       </NuqsAdapter>

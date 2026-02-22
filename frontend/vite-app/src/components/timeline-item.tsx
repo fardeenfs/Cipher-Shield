@@ -21,6 +21,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { eventsMutations } from "@/lib/queries";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarSeparator } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export interface TimelineEntry {
   id: string;
@@ -90,7 +91,17 @@ export function TimelineItem({
                <div className="flex w-full items-center justify-between">
                  <div className="flex items-center gap-2">
                     <div className={cn("size-2.5", severityColor)} />
-                    <span className="font-semibold text-foreground text-sm">{entry.title}</span>
+                    <span className="font-semibold text-foreground text-sm ">
+                      <Tooltip>
+                        <TooltipTrigger className="text-start line-clamp-1">
+                          {entry.title}
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                         {entry.title}
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      </span>
                  </div>
                  <div className="flex items-center gap-2">
                    <Badge variant={badgeVariant} className="capitalize text-[10px] h-5 px-1.5">{entry.risk_level}</Badge>

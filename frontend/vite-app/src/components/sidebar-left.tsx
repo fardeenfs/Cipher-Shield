@@ -21,6 +21,8 @@ import { rulesQueries, streamsQueries } from "@/lib/queries";
 import { StreamActivityCard } from "./stream-activity-card";
 import { ActiveRulesCard } from "./active-rules-card";
 import { GlobalPhoneNumberDialog } from "./add-phone-number-dialog";
+import { Target01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
 
 export function SidebarLeft({
@@ -49,7 +51,14 @@ export function SidebarLeft({
     if (isIndexRoute) {
       return (
         <>
-          <SidebarHeader className="gap-4 border-sidebar-border h-14 border-b"></SidebarHeader>
+          <SidebarHeader className="gap-4 border-sidebar-border h-14 ">
+<div className="flex items-center gap-2 font-bold tracking-tight text-2xl">
+          <HugeiconsIcon icon={Target01Icon} className="text-primary size-5" strokeWidth={2} />
+          <span>Cipher-Shield</span>
+        </div>
+
+
+          </SidebarHeader>
           <SidebarContent className="gap-4 p-2.5">
             <NavCamera />
             <NavBlueprint />

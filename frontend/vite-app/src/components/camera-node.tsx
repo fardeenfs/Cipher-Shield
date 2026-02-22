@@ -8,6 +8,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { streamsMutations } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { ButtonGroup, ButtonGroupSeparator } from "./ui/button-group";
+import { useQueryState } from "nuqs";
 
 type CameraNodeData = {
   number: number;
@@ -39,6 +40,7 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
 
   const queryClient = useQueryClient();
   const updateStreamMutation = useMutation(streamsMutations.update(queryClient));
+  const [, setSelectedCamera] = useQueryState("camera");
 
   
   const toggleLock = useCallback(() => {
@@ -106,10 +108,11 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
   }, [id, isRotating, updateNodeData]);
 
   return (
-<div
+    <div
       ref={nodeRef}
       className={cn("relative", isLocked ? "nodrag" : "")}
       style={{ transform: `rotate(${rotation}deg)` }}
+      onPointerDown={() => setSelectedCamera(id)}
     >
 {(selected || isLocked) && (
         <ButtonGroup

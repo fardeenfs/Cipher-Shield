@@ -70,14 +70,9 @@ function RouteComponent() {
         {!isLoading && !isError && stream && (
           <div className="flex flex-col items-center">
             {/* Blueprint Node / Card View */}
-            <Card className="w-[480px] sm:w-[560px] md:w-[640px] max-w-full shadow-lg overflow-hidden transition-all hover:shadow-xl rounded-xl">
+            <Card className="w-[480px] sm:w-[560px] md:w-[940px] max-w-full shadow-lg overflow-hidden transition-all hover:shadow-xl">
               <CardHeader className="flex flex-row items-center gap-3 bg-muted/20 border-b p-4 space-y-0">
-                <div className={cn("p-2 rounded-lg border", stream.enabled ? "bg-primary/10 border-primary/20" : "bg-destructive/10 border-destructive/20")}>
-                  <HugeiconsIcon 
-                    icon={VideoIcon} 
-                    className={cn("h-5 w-5", stream.enabled ? "text-primary" : "text-destructive")} 
-                  />
-                </div>
+               
                 <div className="flex-1">
                   <CardTitle className="text-lg leading-none mb-1">{stream.name}</CardTitle>
                   <CardDescription className="text-xs line-clamp-1">
