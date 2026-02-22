@@ -39,6 +39,7 @@ use super::routes;
         routes::create_blueprint,
         routes::update_blueprint,
         routes::delete_blueprint,
+        routes::test_twilio_alert,
     ),
     components(
         schemas(
@@ -61,6 +62,7 @@ use super::routes;
         (name = "events",  description = "Analysis event retrieval"),
         (name = "rules",   description = "Per-stream VLM threat assessment rules"),
         (name = "blueprints", description = "Blueprints (floor plan images)"),
+        (name = "notifications", description = "Alert / notification testing"),
     )
 )]
 pub struct ApiDoc;
