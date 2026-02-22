@@ -6,7 +6,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -67,10 +66,10 @@ export function UploadBlueprintDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <SidebarMenuButton>
+        <Button variant="default" className="shrink-0 ">
           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          <span>Add/Edit Blueprint</span>
-        </SidebarMenuButton>
+          <span> Add </span>
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

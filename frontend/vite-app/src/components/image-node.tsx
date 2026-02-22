@@ -8,6 +8,8 @@ import {
 import { BOUNDS } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { blueprintsQueries } from "@/lib/queries";
+import { useQueryState } from "nuqs";
+
 type ImageNodeDATA = {
   label: string;
   showBlindSpot: boolean;
@@ -24,9 +26,12 @@ const ImageNode = ({ id }: NodeProps<ImgNode>) => {
     ?.slice()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())?.[0]?.id;
 
+  const [selectedBlueprintId] = useQueryState("blueprint");
+  const targetBlueprintId = selectedBlueprintId || latestBlueprintId;
+
   const { data: blueprintDetails } = useQuery({
-    ...blueprintsQueries.detail(latestBlueprintId as string),
-    enabled: !!latestBlueprintId,
+    ...blueprintsQueries.detail(targetBlueprintId as string),
+    enabled: !!targetBlueprintId,
   });
 
   const displayImage = blueprintDetails?.image_base64

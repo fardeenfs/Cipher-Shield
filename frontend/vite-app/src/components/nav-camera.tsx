@@ -16,6 +16,7 @@ import {
   PauseIcon,
   PlayIcon,
 } from "@hugeicons/core-free-icons";
+import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
   DropdownMenu,
@@ -49,6 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AddCameraDialog } from "./add-camera-dialog";
 
 export function NavCamera() {
   const queryClient = useQueryClient();
@@ -97,8 +99,8 @@ export function NavCamera() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 pb-4">
-        <div className="relative mb-4 ">
-          <div className="relative">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="relative flex-1 min-w-0">
             <HugeiconsIcon
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
               icon={Search}
@@ -112,6 +114,7 @@ export function NavCamera() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+        <AddCameraDialog />
         </div>
         <SidebarGroup className="px-0 py-0">
           <ScrollBlur className="max-h-100">

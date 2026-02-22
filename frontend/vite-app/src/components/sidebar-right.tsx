@@ -6,6 +6,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { UploadBlueprintDialog } from "./upload-blueprint-dialog";
@@ -61,7 +62,7 @@ export function SidebarRight({
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <UploadBlueprintDialog />
+            <SidebarMenuButton className="hidden"></SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

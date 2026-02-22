@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { NavCamera } from "@/components/nav-camera";
+import { NavBlueprint } from "@/components/nav-blueprint";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { rulesQueries, streamsQueries } from "@/lib/queries";
 import { StreamActivityCard } from "./stream-activity-card";
 import { ActiveRulesCard } from "./active-rules-card";
+import { AddPhoneNumberDialog } from "./add-phone-number-dialog";
 
 
 export function SidebarLeft({
@@ -50,16 +52,11 @@ export function SidebarLeft({
           <SidebarHeader className="gap-4 border-sidebar-border h-14 border-b"></SidebarHeader>
           <SidebarContent className="gap-4 p-2.5">
             <NavCamera />
+            <NavBlueprint />
             {/* <NavPrompts prompts={prompts} /> */}
           </SidebarContent>
           <SidebarRail />
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <AddCameraDialog />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
+          
         </>
       );
     }
@@ -72,6 +69,13 @@ export function SidebarLeft({
             <StreamActivityCard streamId={streamId} />
             <ActiveRulesCard streamId={streamId} streamName={stream?.name || "Loading..."} rules={rules} isMobile={isMobile} />
           </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <AddPhoneNumberDialog />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
         </>
       );
     }
