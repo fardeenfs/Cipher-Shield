@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight02Icon, Call02Icon } from "@hugeicons/core-free-icons";
 import { Dithering } from '@paper-design/shaders-react';
+import mainImage from "@/assets/MAIN.png";
 
 
 export function HeroSection() {
@@ -98,17 +99,9 @@ export function HeroSection() {
 				<FullWidthDivider className="-top-px" />
 				<div className="overflow-hidden *:pointer-events-none *:aspect-video *:select-none">
 					<img
-						alt="light app screen"
-						className="dark:hidden"
+						alt="app screen"
 						height="auto"
-						src=""
-						width="auto"
-					/>
-					<img
-						alt="dark app screen"
-						className="hidden dark:block"
-						height="auto"
-						src="https://storage.efferd.com/screen/dashboard-dark.webp"
+						src={mainImage}
 						width="auto"
 					/>
 				</div>
