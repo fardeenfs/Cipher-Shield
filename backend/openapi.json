@@ -13,6 +13,49 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/alert-phone-number": {
+      "get": {
+        "tags": [
+          "alert-phone"
+        ],
+        "summary": "Get the global alert phone number (used for high-risk SMS). Null if not set.",
+        "operationId": "get_alert_phone_number",
+        "responses": {
+          "200": {
+            "description": "Current alert phone number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "alert-phone"
+        ],
+        "summary": "Set the global alert phone number (used for high-risk SMS). Pass null to clear.",
+        "operationId": "update_alert_phone_number",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Alert phone number updated"
+          }
+        }
+      }
+    },
     "/api/blueprints": {
       "get": {
         "tags": [
@@ -845,6 +888,16 @@
   },
   "components": {
     "schemas": {
+      "AlertSettings": {
+        "type": "object",
+        "description": "Global alert settings (single phone number used when high risk is identified).",
+        "properties": {
+          "alert_phone_number": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "AnalysisEvent": {
         "type": "object",
         "description": "Mirrors the `analysis_events` table.",
@@ -896,6 +949,11 @@
           },
           "title": {
             "type": "string",
+            "nullable": true
+          },
+          "triggered_rule": {
+            "type": "string",
+            "description": "The custom rule description that caused this risk level, or None if the\nVLM used its own judgment.",
             "nullable": true
           }
         }
@@ -1066,10 +1124,6 @@
           "name": {
             "type": "string"
           },
-          "phone_number": {
-            "type": "string",
-            "nullable": true
-          },
           "position_x": {
             "type": "number",
             "format": "double"
@@ -1135,6 +1189,16 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "UpdateAlertSettings": {
+        "type": "object",
+        "description": "Payload to update global alert phone number.",
+        "properties": {
+          "alert_phone_number": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -1204,10 +1268,6 @@
             "type": "string",
             "nullable": true
           },
-          "phone_number": {
-            "type": "string",
-            "nullable": true
-          },
           "position_x": {
             "type": "number",
             "format": "double",
@@ -1255,6 +1315,10 @@
     {
       "name": "blueprints",
       "description": "Blueprints (floor plan images)"
+    },
+    {
+      "name": "alert-phone",
+      "description": "Alert phone number (SMS when high risk)"
     },
     {
       "name": "notifications",

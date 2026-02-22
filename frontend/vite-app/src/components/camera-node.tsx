@@ -2,9 +2,10 @@ import { memo, useRef, useState, useEffect } from "react";
 import { type Node, type NodeProps, useReactFlow } from "@xyflow/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { VideoCameraAiIcon } from "@hugeicons/core-free-icons";
-import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { streamsMutations } from "@/lib/queries";
 
 type CameraNodeData = {
   number: number;
@@ -18,9 +19,13 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
   const { updateNodeData } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isRotating, setIsRotating] = useState(false);
+  
+  const queryClient = useQueryClient();
+  const updateStreamMutation = useMutation(streamsMutations.update(queryClient));
 
   // 0 degrees if no rotation is set
   const rotation = data.rotation || 0;
+  const latestRotationRef = useRef<number>(rotation);
 
   // Start tracking the mouse drag
   const onRotateStart = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -50,10 +55,15 @@ const CameraNodeComponent = ({ id, data, selected }: NodeProps<CameraNode>) => {
       degrees += 90;
 
       updateNodeData(id, { rotation: degrees });
+      latestRotationRef.current = degrees;
     };
 
     const onMouseUp = () => {
       setIsRotating(false);
+      updateStreamMutation.mutate({
+        id,
+        payload: { rotation: latestRotationRef.current }
+      });
     };
 
     window.addEventListener("mousemove", onMouseMove);

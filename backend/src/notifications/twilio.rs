@@ -5,8 +5,9 @@ use std::env;
 use tracing::{error, info, warn};
 
 /// Sends an SMS alert via Twilio. No-op if Twilio env vars are not set.
+/// `to_number`: if Some and non-empty, use it; else use ALERT_PHONE_NUMBER from env.
 /// `risk_level` should be "low", "medium", or "high".
-pub async fn send_alert(stream_name: &str, risk_level: &str, description: &str) {
+pub async fn send_alert(to_number: Option<&str>, stream_name: &str, risk_level: &str, description: &str) {
     let account_sid = match env::var("TWILIO_ACCOUNT_SID") {
         Ok(s) if !s.is_empty() => s,
         _ => {
@@ -28,10 +29,15 @@ pub async fn send_alert(stream_name: &str, risk_level: &str, description: &str) 
             return;
         }
     };
-    let to_number = match env::var("ALERT_PHONE_NUMBER") {
-        Ok(s) if !s.is_empty() => s,
-        _ => {
-            warn!("ALERT_PHONE_NUMBER not set, skipping Twilio alert");
+    let to_number = to_number
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .or_else(|| env::var("ALERT_PHONE_NUMBER").ok().filter(|s| !s.is_empty()));
+    let to_number = match to_number {
+        Some(s) => s,
+        None => {
+            warn!("No alert phone number (set via API or ALERT_PHONE_NUMBER env), skipping Twilio alert");
             return;
         }
     };

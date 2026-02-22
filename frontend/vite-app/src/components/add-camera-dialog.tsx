@@ -82,10 +82,11 @@ export function AddCameraDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <SidebarMenuButton>
+        <Button variant="default" className="shrink-0 ">
+          
           <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-          <span> Add Camera</span>
-        </SidebarMenuButton>
+          <span> Add </span>
+        </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">

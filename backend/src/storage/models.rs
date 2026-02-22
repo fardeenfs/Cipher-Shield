@@ -16,7 +16,6 @@ pub struct Stream {
     pub position_x: f64,
     pub position_y: f64,
     pub rotation: f64,
-    pub phone_number: Option<String>,
     /// Blueprint this stream is placed on (one stream → one blueprint).
     pub blueprint_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
@@ -57,7 +56,6 @@ pub struct UpdateStreamRequest {
     pub position_x: Option<f64>,
     pub position_y: Option<f64>,
     pub rotation: Option<f64>,
-    pub phone_number: Option<String>,
     /// Set to null in JSON to unbind from blueprint; omit to leave unchanged.
     pub blueprint_id: Option<Option<Uuid>>,
 }
@@ -71,6 +69,9 @@ pub struct AnalysisEvent {
     pub description: String,
     pub events: Value,
     pub risk_level: String,
+    /// The custom rule description that caused this risk level, or None if the
+    /// VLM used its own judgment.
+    pub triggered_rule: Option<String>,
     pub raw_response: Option<String>,
     pub title: Option<String>,
     pub frame: Option<Vec<u8>>,
@@ -104,6 +105,18 @@ pub struct EventQuery {
 }
 
 fn default_limit() -> i64 { 50 }
+
+/// Global alert settings (single phone number used when high risk is identified).
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct AlertSettings {
+    pub alert_phone_number: Option<String>,
+}
+
+/// Payload to update global alert phone number.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateAlertSettings {
+    pub alert_phone_number: Option<String>,
+}
 
 // ─── Stream Rules ─────────────────────────────────────────────────────────────
 

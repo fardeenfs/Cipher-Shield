@@ -21,9 +21,9 @@ use crate::{
     storage::{
         db,
         models::{
-            AssistantChatRequest, BlueprintResponse, CreateBlueprintRequest,
+            AlertSettings, AssistantChatRequest, BlueprintResponse, CreateBlueprintRequest,
             CreateRuleRequest, CreateStreamRequest, EventQuery, StreamQuery,
-            UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
+            UpdateAlertSettings, UpdateBlueprintRequest, UpdateEventRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
     },
     streams::manager::{StreamManager, StreamRecord},
@@ -361,6 +361,40 @@ pub async fn assistant_chat(
     Ok(Json(serde_json::json!({ "response": response })))
 }
 
+// ─── Alert phone number (SMS when high risk) ───────────────────────────────────
+
+#[utoipa::path(
+    get,
+    path = "/api/alert-phone-number",
+    tag = "alert-phone",
+    responses(
+        (status = 200, description = "Current alert phone number", body = AlertSettings)
+    )
+)]
+/// Get the global alert phone number (used for high-risk SMS). Null if not set.
+pub async fn get_alert_phone_number(State(state): State<Arc<AppState>>) -> Result<Json<AlertSettings>> {
+    let alert_phone_number = db::get_alert_phone_number(&state.db).await?;
+    Ok(Json(AlertSettings { alert_phone_number }))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/alert-phone-number",
+    tag = "alert-phone",
+    request_body = UpdateAlertSettings,
+    responses(
+        (status = 204, description = "Alert phone number updated")
+    )
+)]
+/// Set the global alert phone number (used for high-risk SMS). Pass null to clear.
+pub async fn update_alert_phone_number(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<UpdateAlertSettings>,
+) -> Result<StatusCode> {
+    db::set_alert_phone_number(&state.db, req.alert_phone_number.as_deref()).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 // ─── Test Twilio alert (for development) ─────────────────────────────────────
 
 #[utoipa::path(
@@ -376,6 +410,7 @@ pub async fn assistant_chat(
 /// Sends one test SMS via Twilio. Use to verify Twilio env vars and ALERT_PHONE_NUMBER.
 pub async fn test_twilio_alert() -> impl IntoResponse {
     tokio::spawn(crate::notifications::twilio::send_alert(
+        None,
         "test-stream",
         "high",
         "This is a test alert from Cipher-Shield.",

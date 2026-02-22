@@ -350,6 +350,32 @@
       padding: 2px 7px;
     }
 
+    .ec-triggered-rule {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .ec-triggered-rule .tr-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      background: #1e1a2e;
+      color: #b0a0e0;
+      border-radius: 3px;
+      padding: 1px 5px;
+      flex-shrink: 0;
+    }
+    .ec-triggered-rule .tr-desc {
+      font-style: italic;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     /* ── History Tab ──────────────────────────────────────────────── */
     .history-toolbar {
       display: flex;
@@ -759,6 +785,12 @@
     const tags = (event.events || []).map(e =>
       `<span class="event-tag">${fmt(e.event_type)}${e.confidence ? ' · ' + Math.round(e.confidence * 100) + '%' : ''}</span>`
     ).join('');
+    const triggeredRuleHtml = event.triggered_rule
+      ? `<div class="ec-triggered-rule">
+           <span class="tr-label">Rule</span>
+           <span class="tr-desc" title="${htmlEsc(event.triggered_rule)}">${htmlEsc(event.triggered_rule)}</span>
+         </div>`
+      : '';
 
     const card = document.createElement('div');
     card.className = 'event-card';
@@ -772,6 +804,7 @@
       </div>
       <div class="ec-description">${event.description || '—'}</div>
       ${tags ? `<div class="ec-tags">${tags}</div>` : ''}
+      ${triggeredRuleHtml}
     `;
     return card;
   }

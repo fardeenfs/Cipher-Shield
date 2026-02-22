@@ -11,19 +11,14 @@ import {
   type NodeChange,
   type EdgeChange,
   type Connection,
-  Background,
   useReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { streamsQueries, streamsMutations } from "@/lib/queries";
 
-import { SidebarLeft } from "@/components/sidebar-left";
-import { SidebarRight } from "@/components/sidebar-right";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -35,7 +30,9 @@ import GridLoader from "./grid-loader";
 import ImageNode from "./image-node";
 import CameraNode from "./camera-node";
 import { BOUNDS } from "@/lib/constants";
-import { TooltipProvider } from "./ui/tooltip";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Alert01Icon } from "@hugeicons/core-free-icons";
 const nodeTypes = {
   imageNode: ImageNode,
   cameraNode: CameraNode,
@@ -68,6 +65,14 @@ const initialEdges: Edge[] = [];
 //  component manages its own state DO NOT TOUCH IT!!!.
 const FlowEditor = React.memo(() => {
   const { fitView, screenToFlowPosition } = useReactFlow();
+  const queryClient = useQueryClient();
+  const updateStreamMutation = useMutation(streamsMutations.update(queryClient));
+  const { data: streams } = useQuery(streamsQueries.list());
+  
+  const [nodesInitialized, setNodesInitialized] = useState(false);
+  const [duplicateAlert, setDuplicateAlert] = useState<string | null>(null);
+  const alertTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     function handleResize() {
       fitView();
@@ -79,6 +84,23 @@ const FlowEditor = React.memo(() => {
 
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
+
+  useEffect(() => {
+    if (streams && !nodesInitialized) {
+      const placedStreams = streams.filter(s => Math.abs(s.position_x) > 0.01 || Math.abs(s.position_y) > 0.01);
+      const camNodes: Node[] = placedStreams.map(s => ({
+        id: String(s.id),
+        type: "cameraNode",
+        position: { x: s.position_x, y: s.position_y },
+        data: {
+          label: s.name,
+          rotation: s.rotation || 0,
+        },
+      }));
+      setNodes([...initialNodes, ...camNodes]);
+      setNodesInitialized(true);
+    }
+  }, [streams, nodesInitialized]);
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
@@ -105,6 +127,9 @@ const FlowEditor = React.memo(() => {
 
       const cameraData = JSON.parse(dataStr);
       if (nodes.filter((i) => i.data.label === cameraData.name).length > 0) {
+        setDuplicateAlert(`"${cameraData.name}" is already on the canvas.`);
+        if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+        alertTimeoutRef.current = setTimeout(() => setDuplicateAlert(null), 3000);
         return;
       }
 
@@ -115,18 +140,41 @@ const FlowEditor = React.memo(() => {
       });
 
       const newNode: Node = {
-        id: `camera-${Date.now()}`,
+        id: String(cameraData.id),
         type: "cameraNode",
         position,
         data: {
           label: cameraData.name,
-          rotation: 0,
+          rotation: cameraData.rotation || 0,
         },
       };
 
       setNodes((nds) => nds.concat(newNode));
+
+      updateStreamMutation.mutate({
+        id: String(cameraData.id),
+        payload: {
+          position_x: position.x,
+          position_y: position.y,
+        }
+      });
     },
-    [screenToFlowPosition, nodes],
+    [screenToFlowPosition, nodes, updateStreamMutation],
+  );
+
+  const onNodeDragStop = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (node.type === "cameraNode") {
+        updateStreamMutation.mutate({
+          id: node.id,
+          payload: {
+            position_x: node.position.x,
+            position_y: node.position.y,
+          },
+        });
+      }
+    },
+    [updateStreamMutation]
   );
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -162,6 +210,7 @@ const FlowEditor = React.memo(() => {
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStop={onNodeDragStop}
         colorMode="dark"
         autoPanOnNodeDrag={false}
         onConnect={onConnect}
@@ -177,6 +226,16 @@ const FlowEditor = React.memo(() => {
         ]}
         fitView
       ></ReactFlow>
+
+      {duplicateAlert && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 origin-top animate-in fade-in zoom-in duration-300">
+          <Alert className="max-w-md border-amber-200 bg-amber-50 text-amber-900 shadow-md dark:border-amber-900 dark:bg-amber-950 dark:text-amber-50">
+            <HugeiconsIcon icon={Alert01Icon} className="h-4 w-4" />
+            <AlertTitle>Duplicate Camera</AlertTitle>
+            <AlertDescription>{duplicateAlert}</AlertDescription>
+          </Alert>
+        </div>
+      )}
     </div>
   );
 });

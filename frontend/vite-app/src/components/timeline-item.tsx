@@ -1,29 +1,49 @@
+import * as React from "react";
 import * as motion from "motion/react-client";
 import type { Variants } from "motion/react";
-
 import { cn } from "@/lib/utils";
-import { ItemDescription, ItemTitle } from "./ui/item";
 import { Badge } from "./ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { CheckmarkBadge01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { eventsMutations } from "@/lib/queries";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarSeparator } from "@/components/ui/sidebar";
 
 export interface TimelineEntry {
   id: string;
   date: string;
   title: string;
   description: string;
-  image: string;
-  imageAlt: string;
+  image?: string | null;
+  imageAlt?: string;
+  risk_level: string;
 }
 
 interface TimelineItemProps {
   entry: TimelineEntry;
   index: number;
   isLast: boolean;
+  onResolve?: () => void;
+  hideResolve?: boolean;
 }
 
 const cardVariants: Variants = {
   offscreen: {
-    scale: 0.97,
-    opacity: 0.97,
+    scale: 0.90,
+    opacity: 0.90,
   },
   onscreen: {
     scale: 1,
@@ -36,56 +56,116 @@ const cardVariants: Variants = {
   },
 };
 
-export function TimelineItem({ entry, index, isLast }: TimelineItemProps) {
+export function TimelineItem({
+  entry,
+  index,
+  isLast,
+  onResolve,
+  hideResolve,
+}: TimelineItemProps) {
+  const queryClient = useQueryClient();
+  const updateEventMutation = useMutation(eventsMutations.update(queryClient));
+
+  const risk = entry.risk_level?.toLowerCase() || 'none';
+  const severityColor = risk === 'high' ? 'bg-destructive' 
+                      : risk === 'medium' ? 'bg-amber-500' 
+                      : risk === 'low' ? 'bg-green-500' : 'bg-muted';
+                      
+  const badgeVariant = risk === 'high' ? 'destructive' : risk === 'medium' ? 'default' : 'secondary';
+
   return (
     <motion.div
       initial="offscreen"
       whileInView="onscreen"
-      viewport={{ amount: 1 }}
-      className="relative flex gap-2 pl-1 pr-2"
+      viewport={{  amount: "some" }}
+      variants={cardVariants}
     >
-      {/* Left line + dot */}
-      <div className="relative flex flex-col items-center pt-1">
-        <div
-          className={cn(
-            "z-10 h-2 w-2 shrink-0 rounded-full bg-foreground transition-all duration-300",
-          )}
-        />
-        {!isLast && <div className="mt-0 w-px flex-1 bg-border" />}
-      </div>
+      <SidebarGroup className="px-0 py-0">
+        <Collapsible className="group/collapsible">
+          <SidebarGroupLabel 
+            asChild 
+            className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full py-3 h-auto cursor-pointer rounded-none"
+          >
+            <CollapsibleTrigger className="flex flex-col items-start w-full">
+               <div className="flex w-full items-center justify-between">
+                 <div className="flex items-center gap-2">
+                    <div className={cn("size-2.5", severityColor)} />
+                    <span className="font-semibold text-foreground text-sm">{entry.title}</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <Badge variant={badgeVariant} className="capitalize text-[10px] h-5 px-1.5">{entry.risk_level}</Badge>
+                   <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-1 transition-transform group-data-[state=open]/collapsible:rotate-90 text-muted-foreground size-4" />
+                 </div>
+               </div>
+               <div className="mt-1 text-xs text-muted-foreground w-full text-left font-normal pl-4.5 line-clamp-1 pr-6">
+                 {entry.date} - {entry.description}
+               </div>
+            </CollapsibleTrigger>
+          </SidebarGroupLabel>
+          <CollapsibleContent>
+            <SidebarGroupContent className="px-4 pb-4 pt-2 space-y-3">
+              {entry.image && (
+                <div className="group relative overflow-hidden rounded-none border border-border mt-2">
+                  <img
+                    src={entry.image}
+                    alt={entry.imageAlt || "Event Frame"}
+                    className="aspect-3/2 w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02] cursor-pointer"
+                  />
+                </div>
+              )}
+              <div className="text-sm text-foreground leading-relaxed">
+                {entry.description}
+              </div>
 
-      {/* Content side (right only) */}
-      <div
-        className={cn(
-          "flex-1 pb-8 transition-all duration-500 ease-out",
-          "translate-y-0 opacity-100",
-        )}
-      >
-        <ItemContent entry={entry} />
-      </div>
-    </motion.div>
-  );
-}
-
-function ItemContent({ entry }: { entry: TimelineEntry }) {
-  return (
-    <motion.div variants={cardVariants} className="space-y-3">
-      <div className="flex w-full items-start justify-between">
-        <div className="space-y-1">
-          <ItemTitle>{entry.title}</ItemTitle>
-          <ItemDescription>{entry.date}</ItemDescription>
-        </div>
-        <Badge variant="destructive">Low</Badge>
-      </div>
-
-      <div className="group relative overflow-hidden rounded-none border border-border">
-        <img
-          src={entry.image}
-          alt={entry.imageAlt}
-          className="aspect-3/2 w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02] cursor-pointer"
-        />
-      </div>
-      <ItemDescription>{entry.description}</ItemDescription>
+              {!hideResolve && (
+                <div className="pt-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-border bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <div className="mr-2">
+                          <HugeiconsIcon icon={CheckmarkBadge01Icon} strokeWidth={2} />
+                        </div>
+                        Resolve Incident
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Resolve Incident?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to mark this incident as resolved? It will be moved to the resolved events list.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            updateEventMutation.mutate(
+                              { id: entry.id, payload: { status: "resolved" } },
+                              {
+                                onSuccess: () => {
+                                  if (onResolve) onResolve();
+                                },
+                              }
+                            );
+                          }}
+                          className="bg-green-600 text-white hover:bg-green-700"
+                        >
+                          Mark as Resolved
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarGroup>
+      {!isLast && <SidebarSeparator className="mx-0" />}
     </motion.div>
   );
 }

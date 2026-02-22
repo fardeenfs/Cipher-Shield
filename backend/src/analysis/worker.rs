@@ -108,6 +108,10 @@ async fn process_frame(
         let t = s.trim();
         if t.is_empty() { None } else { Some(t) }
     });
+    let triggered_rule: Option<&str> = result.triggered_rule.as_deref().and_then(|s| {
+        let t = s.trim();
+        if t.is_empty() { None } else { Some(t) }
+    });
 
     // Persist to DB
     let event = db::insert_event(
@@ -118,6 +122,7 @@ async fn process_frame(
         &result.description,
         events_json,
         risk_str,
+        triggered_rule,
         title,
         Some(&frame.data),
         "unresolved",
@@ -134,12 +139,14 @@ async fn process_frame(
     // Broadcast to WebSocket subscribers (ignore if no subscribers)
     let _ = event_tx.send(event);
 
-    // High risk only: send Twilio SMS alert (fire-and-forget)
+    // High risk only: send Twilio SMS to global alert number (DB then env)
     if result.risk_level == RiskLevel::High {
+        let db = db.clone();
         let stream_name = frame.stream_name.clone();
         let description = result.description.clone();
         tokio::spawn(async move {
-            crate::notifications::twilio::send_alert(&stream_name, "high", &description).await;
+            let to_number = db::get_alert_phone_number(&db).await.ok().flatten();
+            crate::notifications::twilio::send_alert(to_number.as_deref(), &stream_name, "high", &description).await;
         });
     }
 
