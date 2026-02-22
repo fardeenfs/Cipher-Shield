@@ -21,7 +21,7 @@ use crate::{
         db,
         models::{
             BlueprintResponse, BlueprintSummary, CreateBlueprintRequest,
-            CreateRuleRequest, CreateStreamRequest, EventQuery,
+            CreateRuleRequest, CreateStreamRequest, EventQuery, Stream, StreamQuery,
             UpdateBlueprintRequest, UpdateRuleRequest, UpdateStreamRequest,
         },
     },
@@ -49,12 +49,16 @@ pub async fn health() -> impl IntoResponse {
     get,
     path = "/api/streams",
     tag = "streams",
+    params(StreamQuery),
     responses(
-        (status = 200, description = "List of all streams", body = Vec<Stream>)
+        (status = 200, description = "List of streams (optionally filter by blueprint_id)", body = Vec<Stream>)
     )
 )]
-pub async fn list_streams(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse> {
-    let streams = db::list_streams(&state.db).await?;
+pub async fn list_streams(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<StreamQuery>,
+) -> Result<impl IntoResponse> {
+    let streams = db::list_streams(&state.db, query.blueprint_id).await?;
     Ok(Json(streams))
 }
 
@@ -88,10 +92,12 @@ pub async fn get_stream(
 )]
 pub async fn create_stream(
     State(state): State<Arc<AppState>>,
-    // stream_manager is injected separately — see router
     axum::extract::Extension(manager): axum::extract::Extension<Arc<StreamManager>>,
     Json(req): Json<CreateStreamRequest>,
 ) -> Result<impl IntoResponse> {
+    if let Some(bid) = req.blueprint_id {
+        let _ = db::get_blueprint(&state.db, bid).await?;
+    }
     let stream = db::create_stream(&state.db, &req).await?;
 
     // Start capture task if enabled
@@ -127,6 +133,9 @@ pub async fn update_stream(
     Path(id): Path<Uuid>,
     Json(req): Json<UpdateStreamRequest>,
 ) -> Result<impl IntoResponse> {
+    if let Some(Some(bid)) = req.blueprint_id {
+        let _ = db::get_blueprint(&state.db, bid).await?;
+    }
     let stream = db::update_stream(&state.db, id, &req).await?;
 
     // Restart capture task to apply new settings

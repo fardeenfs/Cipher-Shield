@@ -14,15 +14,28 @@ use crate::{
 
 // ─── Streams ──────────────────────────────────────────────────────────────────
 
-pub async fn list_streams(db: &PgPool) -> Result<Vec<Stream>> {
-    let rows = sqlx::query_as!(
-        Stream,
-        r#"SELECT id, name, source_type, source_url, capture_interval_sec,
-                  enabled, position_x, position_y, rotation, phone_number,
-                  created_at, updated_at
-           FROM streams
-           ORDER BY created_at ASC"#
-    )
+pub async fn list_streams(db: &PgPool, blueprint_id: Option<Uuid>) -> Result<Vec<Stream>> {
+    let rows = if let Some(bid) = blueprint_id {
+        sqlx::query_as!(
+            Stream,
+            r#"SELECT id, name, source_type, source_url, capture_interval_sec,
+                      enabled, position_x, position_y, rotation, phone_number,
+                      blueprint_id, created_at, updated_at
+               FROM streams
+               WHERE blueprint_id = $1
+               ORDER BY created_at ASC"#,
+            bid
+        )
+    } else {
+        sqlx::query_as!(
+            Stream,
+            r#"SELECT id, name, source_type, source_url, capture_interval_sec,
+                      enabled, position_x, position_y, rotation, phone_number,
+                      blueprint_id, created_at, updated_at
+               FROM streams
+               ORDER BY created_at ASC"#
+        )
+    }
     .fetch_all(db)
     .await?;
     Ok(rows)
@@ -33,7 +46,7 @@ pub async fn get_stream(db: &PgPool, id: Uuid) -> Result<Stream> {
         Stream,
         r#"SELECT id, name, source_type, source_url, capture_interval_sec,
                   enabled, position_x, position_y, rotation, phone_number,
-                  created_at, updated_at
+                  blueprint_id, created_at, updated_at
            FROM streams WHERE id = $1"#,
         id
     )
@@ -45,16 +58,17 @@ pub async fn get_stream(db: &PgPool, id: Uuid) -> Result<Stream> {
 pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Stream> {
     let row = sqlx::query_as!(
         Stream,
-        r#"INSERT INTO streams (name, source_type, source_url, capture_interval_sec, enabled)
-           VALUES ($1, $2, $3, $4, $5)
+        r#"INSERT INTO streams (name, source_type, source_url, capture_interval_sec, enabled, blueprint_id)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING id, name, source_type, source_url, capture_interval_sec,
                      enabled, position_x, position_y, rotation, phone_number,
-                     created_at, updated_at"#,
+                     blueprint_id, created_at, updated_at"#,
         req.name,
         req.source_type,
         req.source_url,
         req.capture_interval_sec,
         req.enabled,
+        req.blueprint_id,
     )
     .fetch_one(db)
     .await?;
@@ -63,6 +77,10 @@ pub async fn create_stream(db: &PgPool, req: &CreateStreamRequest) -> Result<Str
 
 pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> Result<Stream> {
     let current = get_stream(db, id).await?;
+    let blueprint_id = match req.blueprint_id {
+        None => current.blueprint_id,
+        Some(opt) => opt,
+    };
 
     let row = sqlx::query_as!(
         Stream,
@@ -76,11 +94,12 @@ pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> 
                position_y           = $8,
                rotation             = $9,
                phone_number         = $10,
+               blueprint_id         = $11,
                updated_at           = NOW()
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
                      enabled, position_x, position_y, rotation, phone_number,
-                     created_at, updated_at"#,
+                     blueprint_id, created_at, updated_at"#,
         id,
         req.name.as_deref().unwrap_or(&current.name),
         req.source_type.as_deref().unwrap_or(&current.source_type),
@@ -95,6 +114,7 @@ pub async fn update_stream(db: &PgPool, id: Uuid, req: &UpdateStreamRequest) -> 
             Some(s) if s.is_empty() => None,
             Some(s) => Some(s.clone()),
         },
+        blueprint_id,
     )
     .fetch_one(db)
     .await?;
@@ -121,7 +141,7 @@ pub async fn set_stream_enabled(db: &PgPool, id: Uuid, enabled: bool) -> Result<
            WHERE id = $1
            RETURNING id, name, source_type, source_url, capture_interval_sec,
                      enabled, position_x, position_y, rotation, phone_number,
-                     created_at, updated_at"#,
+                     blueprint_id, created_at, updated_at"#,
         id,
         enabled,
     )

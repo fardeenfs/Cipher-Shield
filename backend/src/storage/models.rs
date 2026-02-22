@@ -4,7 +4,7 @@ use serde_json::Value;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-/// Mirrors the `streams` table. Stream = camera (position, rotation, optional phone for alerts).
+/// Mirrors the `streams` table. Stream = camera; belongs to at most one blueprint (blueprint_id).
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow, ToSchema)]
 pub struct Stream {
     pub id: Uuid,
@@ -17,6 +17,8 @@ pub struct Stream {
     pub position_y: f64,
     pub rotation: f64,
     pub phone_number: Option<String>,
+    /// Blueprint this stream is placed on (one stream → one blueprint).
+    pub blueprint_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -31,10 +33,18 @@ pub struct CreateStreamRequest {
     pub capture_interval_sec: i32,
     #[serde(default = "default_enabled")]
     pub enabled: bool,
+    /// Optional blueprint to bind this stream to.
+    pub blueprint_id: Option<Uuid>,
 }
 
 fn default_interval() -> i32 { 5 }
 fn default_enabled() -> bool { true }
+
+/// Query params for listing streams (e.g. filter by blueprint).
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct StreamQuery {
+    pub blueprint_id: Option<Uuid>,
+}
 
 /// Payload for updating an existing stream.
 #[derive(Debug, Deserialize, ToSchema)]
@@ -48,6 +58,8 @@ pub struct UpdateStreamRequest {
     pub position_y: Option<f64>,
     pub rotation: Option<f64>,
     pub phone_number: Option<String>,
+    /// Set to null in JSON to unbind from blueprint; omit to leave unchanged.
+    pub blueprint_id: Option<Option<Uuid>>,
 }
 
 /// Mirrors the `analysis_events` table.
